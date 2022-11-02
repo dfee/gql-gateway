@@ -33,5 +33,6 @@ pytest-watch = "^4.2.0"
 pytest-asyncio = "^0.20.1"
 
 [tool.poetry.scripts]
+gen_schema = 'gateway.generate:gen_schema'
 serve_core = 'gateway.web:serve_core'
 serve_graphene = 'gateway.web:serve_graphene'

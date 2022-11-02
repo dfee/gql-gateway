@@ -9,6 +9,8 @@ from gateway.repository import HERBERT_ID, DUNE_ID
 import pytest
 
 from gateway.util.resource import load_resource as _load_resource
+from gateway.util.graphql import gen_schema
+from gateway.generate import get_gen_path
 
 load_resource = lambda resource: _load_resource(__name__, resource)
 
@@ -35,6 +37,13 @@ def context(author_service: AuthorService, book_service: BookService) -> Context
         author_service,
         book_service,
     )
+
+
+def test_schema_snapshot():
+    current = gen_schema(schema.graphql_schema)
+    with open(get_gen_path(), mode="r") as f:
+        persisted = f.read()
+    assert current == persisted
 
 
 @pytest.mark.asyncio
