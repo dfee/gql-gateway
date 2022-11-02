@@ -15,9 +15,11 @@ authors = ["Devin Fee <devin@devinfee.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-graphene = "^3.1.1"
-python = "^3.8"
 aiodataloader = "^0.2.1"
+aiohttp = "^3.8.3"
+graphene = "^3.1.1"
+graphql-server = { extras = ["aiohttp"], version = "^3.0.0b5" }
+python = "^3.8"
 
 [tool.poetry.group.test.dependencies]
 black = "^22.10.0"
@@ -29,3 +31,7 @@ pylint = "^2.15.5"
 pytest = "^7.2.0"
 pytest-watch = "^4.2.0"
 pytest-asyncio = "^0.20.1"
+
+[tool.poetry.scripts]
+serve_core = 'gateway.web:serve_core'
+serve_graphene = 'gateway.web:serve_graphene'

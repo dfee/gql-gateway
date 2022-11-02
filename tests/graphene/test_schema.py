@@ -8,7 +8,7 @@ from gateway.graphene.dataloaders import AuthorBatchLoader, BookBatchLoader
 from gateway.repository import HERBERT_ID, DUNE_ID
 import pytest
 
-from tests.utils import load_resource as _load_resource
+from gateway.util.resource import load_resource as _load_resource
 
 load_resource = lambda resource: _load_resource(__name__, resource)
 

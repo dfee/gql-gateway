@@ -1,5 +1,4 @@
 import pkgutil
-import inspect
 
 
 def load_resource(mod_name, resource: str) -> str:
