@@ -1,5 +1,5 @@
 import typing
-from base64 import b64decode, b64encode
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from functools import cache
 from graphene import ObjectType, String, ID, List, Field, Interface
 from gateway.author import AuthorDto
@@ -36,7 +36,7 @@ class Node(Interface):
 
     @staticmethod
     def decode_id(_id) -> typing.Tuple[str, str]:
-        _typename, _id = b64decode(_id).decode("utf-8").split(":")
+        _typename, _id = urlsafe_b64decode(_id).decode("utf-8").split(":")
         if _typename is None:
             raise ValueError("Could not parse ID: typename")
         if _id is None:
@@ -47,7 +47,9 @@ class Node(Interface):
     def encode_id(instance) -> str:
         _id = instance.id
         _typename = Node.node_map.get(type(instance)).__name__
-        return b64encode(f"{_typename}:{_id}".encode("utf-8")).decode("utf-8")
+        return urlsafe_b64encode(
+            f"{_typename}:{_id}".rstrip("=").encode("utf-8")
+        ).decode("utf-8")
 
 
 class Author(ObjectType):

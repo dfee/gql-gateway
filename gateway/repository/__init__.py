@@ -4,8 +4,8 @@ from uuid import uuid4, UUID
 from .models import Author, Book
 
 # author ids
-THOMPSON_ID = uuid4()
-HERBERT_ID = uuid4()
+HERBERT_ID = UUID("00000000-0000-0000-0000-000000000000")
+THOMPSON_ID = UUID("00000000-0000-0000-0000-000000000001")
 
 # book ids
 LOATHING_ID = uuid4()
