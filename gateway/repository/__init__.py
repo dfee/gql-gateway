@@ -36,8 +36,12 @@ class AuthorRepository:
             raise TypeError(f"Author not found: '{id}'")
         return author
 
-
-author_repository = AuthorRepository()
+    def get_many(self, ids: List[UUID]) -> List[Author]:
+        return [
+            author
+            for author in [self.authors.get(_id) for _id in ids]
+            if author is not None
+        ]
 
 
 class BookRepository:
@@ -49,5 +53,9 @@ class BookRepository:
             raise TypeError(f"Book not found: '{id}'")
         return book
 
-
-book_repository = BookRepository()
+    def get_many(self, ids: List[UUID]) -> List[Book]:
+        return [
+            author
+            for author in [self.books.get(_id) for _id in ids]
+            if author is not None
+        ]

@@ -1,8 +1,11 @@
 from uuid import UUID
+from typing import Container, Optional
 from graphene import ObjectType, String, Schema, ID, Field
-from gateway.repository import author_repository, book_repository, models
+from gateway.author import AuthorDto
+from gateway.book import BookDto
 from .models import Author, Book, Node
 from base64 import b64decode
+from .context import Context, with_context, as_context
 
 
 class Query(ObjectType):
@@ -11,20 +14,25 @@ class Query(ObjectType):
     node = Field(Node, id=ID(required=True))
 
     @staticmethod
-    def resolve_author(root, info, id) -> models.Author:
-        return author_repository.get_or_throw(UUID(id))
+    @with_context
+    async def resolve_author(
+        _root, _info, ctx: Context, id: str
+    ) -> Optional[AuthorDto]:
+        return await ctx.author_data_loader.load(UUID(id))
 
     @staticmethod
-    def resolve_book(root, info, id) -> models.Book:
-        return book_repository.get_or_throw(UUID(id))
+    @with_context
+    async def resolve_book(_root, _info, ctx: Context, id: str) -> Optional[BookDto]:
+        return await ctx.book_data_loader.load(UUID(id))
 
     @staticmethod
-    def resolve_node(root, info, id):
-        _typename, _id = b64decode(id).decode().split(":")
+    @with_context
+    async def resolve_node(_root, _info, ctx: Context, id: str):
+        _typename, _id = Node.decode_id(id)
         if _typename == "Author":
-            return author_repository.get_or_throw(UUID(_id))
+            return await ctx.author_data_loader.load(UUID(_id))
         if _typename == "Book":
-            return book_repository.get_or_throw(UUID(_id))
+            return await ctx.book_data_loader.load(UUID(_id))
         raise ValueError(f"Unknown type: '{_typename}'")
 
 

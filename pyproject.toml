@@ -17,6 +17,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 graphene = "^3.1.1"
 python = "^3.8"
+aiodataloader = "^0.2.1"
 
 [tool.poetry.group.test.dependencies]
 black = "^22.10.0"
@@ -27,3 +28,4 @@ mypy = "^0.982"
 pylint = "^2.15.5"
 pytest = "^7.2.0"
 pytest-watch = "^4.2.0"
+pytest-asyncio = "^0.20.1"

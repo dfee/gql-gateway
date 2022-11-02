@@ -1,21 +1,53 @@
 import typing
+from base64 import b64decode, b64encode
+from functools import cache
 from graphene import ObjectType, String, ID, List, Field, Interface
-from gateway.repository import models, author_repository, book_repository
+from gateway.author import AuthorDto
+from gateway.book import BookDto
+from gateway.util.classproperty import classproperty
+from gateway.graphene.context import with_context, Context
 
 
 class Node(Interface):
     id = ID(required=True)
 
+    @staticmethod
+    def resolve_mapping(instance):
+        # TODO: better to build this using something like __subclasshook__
+        node_map = {AuthorDto: Author, BookDto: Book}
+        return node_map.get(instance.__class__)
+
+    @classproperty
+    @cache
+    def node_map(cls):
+        # TODO: memoize, build up during class creation... __subclasshook__
+        return {AuthorDto: Author, BookDto: Book}
+
     @classmethod
     def resolve_type(cls, instance, info):
-        if instance._typename == "Author":
-            return Author
-        if instance._typename == "Book":
-            return Book
+        graphene_type = cls.node_map.get(type(instance))
+        if graphene_type is not None:
+            return graphene_type
         raise ValueError(f"Cannot resolve type from: '{instance}'")
 
-    def resolve_id(parent, info):
-        return parent._node_id
+    @classmethod
+    def resolve_id(cls, parent, info):
+        return cls.encode_id(parent)
+
+    @staticmethod
+    def decode_id(_id) -> typing.Tuple[str, str]:
+        _typename, _id = b64decode(_id).decode("utf-8").split(":")
+        if _typename is None:
+            raise ValueError("Could not parse ID: typename")
+        if _id is None:
+            raise ValueError("Could not parse ID: id")
+        return (_typename, _id)
+
+    @staticmethod
+    def encode_id(instance) -> str:
+        _id = instance.id
+        _typename = Node.node_map.get(type(instance)).__name__
+        return b64encode(f"{_typename}:{_id}".encode("utf-8")).decode("utf-8")
 
 
 class Author(ObjectType):
@@ -32,9 +64,11 @@ class Author(ObjectType):
         return f"{parent.first_name} {parent.last_name}"
 
     @staticmethod
-    def resolve_books(parent: models.Author, info) -> typing.List[models.Book]:
-        # (actually should be going through a dataloader)
-        return [book_repository.get_or_throw(book_id) for book_id in parent.book_ids]
+    @with_context
+    async def resolve_books(
+        parent: AuthorDto, info, ctx: Context
+    ) -> typing.Iterable[BookDto]:
+        return await ctx.book_data_loader.load_many(parent.book_ids)
 
 
 class Book(ObjectType):
@@ -45,5 +79,6 @@ class Book(ObjectType):
     author = Field(lambda: Author, required=True)
 
     @staticmethod
-    def resolve_author(parent: models.Book, info) -> models.Author:
-        return author_repository.get_or_throw(parent.author_id)
+    @with_context
+    async def resolve_author(parent: BookDto, info, context: Context) -> AuthorDto:
+        return await context.author_data_loader.load(parent.author_id)

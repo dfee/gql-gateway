@@ -4,15 +4,8 @@ from typing import List
 
 
 @dataclass
-class Author:
+class AuthorDto:
     id: UUID
     first_name: str
     last_name: str
     book_ids: List[UUID]
-
-
-@dataclass
-class Book:
-    id: UUID
-    title: str
-    author_id: UUID
