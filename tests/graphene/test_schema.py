@@ -1,18 +1,21 @@
+from pathlib import Path
+
 import pytest
 from graphql import ExecutionResult
+from pytest_snapshot.plugin import Snapshot
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
+import gateway
 from gateway.author import AuthorDto, AuthorService
 from gateway.book import BookDto, BookService
 from gateway.context import Context
-from gateway.generate import get_gen_path
 from gateway.graphene.dataloaders import DataLoaderRegistry
 from gateway.graphene.models import Author, Node
 from gateway.graphene.schema import schema
 from gateway.sql.context import DbContext, bootstrap, make_default_engine
 from gateway.sql.fixtures import AUTHOR_ID_HERBERT, BOOK_ID_DUNE, load_fixtures
-from gateway.util.graphql import gen_schema
+from gateway.util.graphql import SCHEMA_FILENAME, pprint_schema, schema_dirpath
 from gateway.util.resource import load_resource as _load_resource
 
 load_resource = lambda resource: _load_resource(__name__, resource)
@@ -62,11 +65,13 @@ def book_dune(book_service: BookService) -> BookDto:
     return book_service.one(BOOK_ID_DUNE)
 
 
-def test_schema_snapshot():
-    current = gen_schema(schema.graphql_schema)
-    with open(get_gen_path(), mode="r") as f:
-        persisted = f.read()
-    assert current == persisted
+def test_snapshot(snapshot: Snapshot) -> None:
+    banner = "# This file is generated. Please do not edit."
+    printed = pprint_schema(schema.graphql_schema)
+    concatenated = "\n\n".join([banner, printed])
+
+    snapshot.snapshot_dir = schema_dirpath()
+    snapshot.assert_match(concatenated, SCHEMA_FILENAME)
 
 
 def test_query_author(
