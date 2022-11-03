@@ -1,1 +1,1 @@
-from .app import serve_graphene
+from .app import serve_core, serve_graphene

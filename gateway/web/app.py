@@ -44,7 +44,7 @@ class CustomGraphQLView(GraphQLView):
         return factory()
 
 
-def flask_graphene_app():
+def serve_graphene():
     from gateway.graphene.schema import schema
 
     app = Flask(__name__)
@@ -59,8 +59,22 @@ def flask_graphene_app():
         ),
     )
 
-    return app
+    app.run(host="0.0.0.0", port=8080)
 
 
-def serve_graphene():
-    flask_graphene_app().run(host="0.0.0.0", port=8080)
+def serve_core():
+    from gateway.core.schema import schema
+
+    app = Flask(__name__)
+
+    app.add_url_rule(
+        "/graphql",
+        view_func=CustomGraphQLView.as_view(
+            "graphql",
+            batch=True,
+            graphiql=True,
+            schema=schema,
+        ),
+    )
+
+    app.run(host="0.0.0.0", port=8080)
