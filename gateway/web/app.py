@@ -62,5 +62,5 @@ def flask_graphene_app():
     return app
 
 
-def serve_flask_graphene():
+def serve_graphene():
     flask_graphene_app().run(host="0.0.0.0", port=8080)

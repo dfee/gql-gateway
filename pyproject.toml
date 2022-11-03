@@ -10,7 +10,6 @@ multi_line_output = 3
 [tool.mypy]
 plugins = "sqlalchemy.ext.mypy.plugin"
 
-
 [tool.poetry]
 name = "gateway"
 version = "0.1.0"
@@ -19,16 +18,14 @@ authors = ["Devin Fee <devin@devinfee.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-aiohttp = "^3.8.3"
 black = "^22.10.0"
 flask = "1.1.1"
 graphene = "^3.1.1"
-graphql-server = { extras = ["aiohttp", "flask"], version = "^3.0.0b5" }
+graphql-server = { extras = ["flask"], version = "^3.0.0b5" }
 itsdangerous = "2.0.1"
 jinja2 = "2.11.3"
 markupsafe = "2.0.1"
 promise = "^2.3"
-psycopg2 = "^2.9.5"
 python = "^3.8"
 sqlalchemy = { extras = ["mypy"], version = "^1.4.42" }
 werkzeug = "2.0.3"
@@ -45,7 +42,5 @@ pytest-asyncio = "^0.20.1"
 
 [tool.poetry.scripts]
 gen_schema = "gateway.generate:gen_schema"
-serve_aiohttp_core = "gateway.web.graphene:serve_core"
-serve_aiohttp_graphene = "gateway.web.graphene:serve_graphene"
-serve_flask_core = "gateway.web.flask:serve_flask_core"
-serve_flask_graphene = "gateway.web.flask:serve_flask_graphene"
+serve_core = "gateway.web:serve_core"
+serve_graphene = "gateway.web:serve_graphene"
