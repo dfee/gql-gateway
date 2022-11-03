@@ -1,15 +1,15 @@
-from typing import Any, TypeGuard
 from dataclasses import dataclass
 from functools import wraps
+from typing import Any, TypeGuard
+
 from gateway.author import AuthorService
 from gateway.book import BookService
-from aiodataloader import DataLoader
+from gateway.graphene.dataloaders import DataLoaderRegistry
 
 
 @dataclass
 class Context:
-    author_data_loader: DataLoader
-    book_data_loader: DataLoader
+    dataloaders: DataLoaderRegistry
     author_service: AuthorService
     book_service: BookService
 

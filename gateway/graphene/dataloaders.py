@@ -1,38 +1,75 @@
-from aiodataloader import DataLoader
 import typing
-from uuid import UUID
+from dataclasses import dataclass
+
+from promise import Promise
+from promise.dataloader import DataLoader
 
 from gateway.author import AuthorDto, AuthorService
 from gateway.book import BookDto, BookService
 
-
-class AuthorBatchLoader:
-    # TODO: factory method for batch_load would be good enough
-    def __init__(self, author_service: AuthorService):
-        self.author_service = author_service
-
-    async def batch_load(
-        self, keys: typing.List[UUID]
-    ) -> typing.List[typing.Optional[AuthorDto]]:
-        results = self.author_service.many(keys)
-        return [results.get(key) for key in keys]
-
-    @classmethod
-    def as_dataloader(cls, author_service: AuthorService) -> DataLoader:
-        return DataLoader(batch_load_fn=cls(author_service).batch_load)
+K = typing.TypeVar("K")
+T = typing.TypeVar("T")
 
 
-class BookBatchLoader:
-    # TODO: factory method for batch_load would be good enough
-    def __init__(self, book_service: BookService):
-        self.book_service = book_service
+@dataclass
+class TypedDataLoader(typing.Generic[K, T]):
+    dataloader: DataLoader
 
-    async def batch_load(
-        self, keys: typing.List[UUID]
+    def load(self, k: K) -> Promise[T]:
+        return self.dataloader.load(k)
+
+    def load_many(self, k: K) -> Promise[T]:
+        return self.dataloader.load_many(k)
+
+
+def build_author_by_id(
+    author_service: AuthorService,
+) -> TypedDataLoader[int, AuthorDto]:
+    def batch_load_fn(
+        keys: typing.List[int],
+    ) -> Promise[typing.List[typing.Optional[AuthorDto]]]:
+        results = author_service.many(keys)
+        return Promise.resolve([results.get(key) for key in keys])
+
+    return DataLoader(batch_load_fn=batch_load_fn)
+
+
+def build_book_by_id(
+    book_service: BookService,
+) -> Promise[TypedDataLoader[int, BookDto]]:
+    def batch_load_fn(
+        keys: typing.List[int],
     ) -> typing.List[typing.Optional[BookDto]]:
-        results = self.book_service.many(keys)
-        return [results.get(key) for key in keys]
+        results = book_service.many(keys)
+        return Promise.resolve([results.get(key) for key in keys])
+
+    return DataLoader(batch_load_fn=batch_load_fn)
+
+
+def build_book_by_author_id(
+    book_service: BookService,
+) -> Promise[TypedDataLoader[int, BookDto]]:
+    def batch_load_fn(
+        keys: typing.List[int],
+    ) -> typing.List[typing.Optional[BookDto]]:
+        results = book_service.by_author_ids(keys)
+        return Promise.resolve([results.get(key) for key in keys])
+
+    return DataLoader(batch_load_fn=batch_load_fn)
+
+
+@dataclass
+class DataLoaderRegistry:
+    author_by_id: TypedDataLoader[int, AuthorDto]
+    book_by_author_id: TypedDataLoader[int, BookDto]
+    book_by_id: TypedDataLoader[int, BookDto]
 
     @classmethod
-    def as_dataloader(cls, book_service: BookService) -> DataLoader:
-        return DataLoader(batch_load_fn=cls(book_service).batch_load)
+    def setup(
+        cls: typing.Type[T], author_service: AuthorService, book_service: BookService
+    ) -> T:
+        return cls(
+            author_by_id=build_author_by_id(author_service),
+            book_by_author_id=build_book_by_author_id(book_service),
+            book_by_id=build_book_by_id(book_service),
+        )

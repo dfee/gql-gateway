@@ -1,11 +1,15 @@
 import typing
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from functools import cache
-from graphene import ObjectType, String, ID, List, Field, Interface
+
+from graphene import ID, Field, Interface, List, ObjectType, String
+from promise import Promise
+
 from gateway.author import AuthorDto
 from gateway.book import BookDto
+from gateway.context import Context, with_context
 from gateway.util.classproperty import classproperty
-from gateway.graphene.context import with_context, Context
+from gateway.util.promise import unwrap_promise
 
 
 class Node(Interface):
@@ -35,21 +39,21 @@ class Node(Interface):
         return cls.encode_id(parent)
 
     @staticmethod
-    def decode_id(_id) -> typing.Tuple[str, str]:
+    def decode_id(_id) -> typing.Tuple[str, int]:
         _typename, _id = urlsafe_b64decode(_id).decode("utf-8").split(":")
         if _typename is None:
             raise ValueError("Could not parse ID: typename")
         if _id is None:
             raise ValueError("Could not parse ID: id")
-        return (_typename, _id)
+        _id_int = int(_id, base=10)
+
+        return (_typename, _id_int)
 
     @staticmethod
     def encode_id(instance) -> str:
         _id = instance.id
         _typename = Node.node_map.get(type(instance)).__name__
-        return urlsafe_b64encode(
-            f"{_typename}:{_id}".rstrip("=").encode("utf-8")
-        ).decode("utf-8")
+        return urlsafe_b64encode(f"{_typename}:{_id}".encode("utf-8")).decode("utf-8")
 
 
 class Author(ObjectType):
@@ -67,10 +71,11 @@ class Author(ObjectType):
 
     @staticmethod
     @with_context
-    async def resolve_books(
-        parent: AuthorDto, info, ctx: Context
-    ) -> typing.Iterable[BookDto]:
-        return await ctx.book_data_loader.load_many(parent.book_ids)
+    @unwrap_promise
+    def resolve_books(
+        parent: AuthorDto, _info, ctx: Context
+    ) -> Promise[typing.Iterable[BookDto]]:
+        return ctx.dataloaders.book_by_author_id.load(parent.id)
 
 
 class Book(ObjectType):
@@ -82,5 +87,6 @@ class Book(ObjectType):
 
     @staticmethod
     @with_context
-    async def resolve_author(parent: BookDto, info, context: Context) -> AuthorDto:
-        return await context.author_data_loader.load(parent.author_id)
+    @unwrap_promise
+    def resolve_author(parent: BookDto, _info, context: Context) -> Promise[AuthorDto]:
+        return context.dataloaders.author_by_id.load(parent.author_id)

@@ -1,14 +1,14 @@
-from uuid import UUID
-from typing import Container, Optional
-from graphql.utilities import lexicographic_sort_schema
-from graphene import ObjectType, String, Schema, ID, Field
+from typing import Optional
+
+from graphene import ID, Field, ObjectType, Schema, String
+from promise import Promise
+
 from gateway.author import AuthorDto
 from gateway.book import BookDto
+from gateway.util.promise import unwrap_promise
+
+from ..context import Context, with_context
 from .models import Author, Book, Node
-from base64 import b64decode
-from .context import Context, with_context, as_context
-from gateway.util.graphql import write_schema
-from gateway.util.resource import get_mod_path
 
 
 class Query(ObjectType):
@@ -18,24 +18,29 @@ class Query(ObjectType):
 
     @staticmethod
     @with_context
-    async def resolve_author(
+    @unwrap_promise
+    def resolve_author(
         _root, _info, ctx: Context, id: str
-    ) -> Optional[AuthorDto]:
-        return await ctx.author_data_loader.load(UUID(id))
+    ) -> Promise[Optional[AuthorDto]]:
+        _, _id = Node.decode_id(id)
+        return ctx.dataloaders.author_by_id.load(_id)
 
     @staticmethod
     @with_context
-    async def resolve_book(_root, _info, ctx: Context, id: str) -> Optional[BookDto]:
-        return await ctx.book_data_loader.load(UUID(id))
+    @unwrap_promise
+    def resolve_book(_root, _info, ctx: Context, id: str) -> Promise[Optional[BookDto]]:
+        _, _id = Node.decode_id(id)
+        return ctx.dataloaders.book_by_id.load(_id)
 
     @staticmethod
     @with_context
-    async def resolve_node(_root, _info, ctx: Context, id: str):
+    @unwrap_promise
+    def resolve_node(_root, _info, ctx: Context, id: str):
         _typename, _id = Node.decode_id(id)
         if _typename == "Author":
-            return await ctx.author_data_loader.load(UUID(_id))
+            return ctx.dataloaders.author_by_id.load(_id)
         if _typename == "Book":
-            return await ctx.book_data_loader.load(UUID(_id))
+            return ctx.dataloaders.book_by_id.load(_id)
         raise ValueError(f"Unknown type: '{_typename}'")
 
 

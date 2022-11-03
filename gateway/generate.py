@@ -1,7 +1,8 @@
 from pathlib import Path
+
 from gateway.graphene.schema import schema
-from gateway.util.resource import get_mod_path
 from gateway.util.graphql import write_schema
+from gateway.util.resource import get_mod_path
 
 
 def get_gen_path() -> Path:

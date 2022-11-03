@@ -1,11 +1,16 @@
 from dataclasses import dataclass
-from uuid import UUID
-from typing import List
+from typing import Optional
 
 
 @dataclass
 class AuthorDto:
-    id: UUID
+    id: int
     first_name: str
     last_name: str
-    book_ids: List[UUID]
+
+
+@dataclass
+class CreateAuthorDto:
+    first_name: str
+    last_name: str
+    id: Optional[int] = None

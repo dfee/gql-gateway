@@ -1,6 +1,7 @@
 from pathlib import Path
-from graphql.utilities import lexicographic_sort_schema, print_schema
+
 from graphql import GraphQLSchema
+from graphql.utilities import lexicographic_sort_schema, print_schema
 
 
 def gen_schema(schema: GraphQLSchema) -> str:

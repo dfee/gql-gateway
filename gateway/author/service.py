@@ -1,38 +1,42 @@
-from gateway.repository import AuthorRepository
-from uuid import UUID
-from typing import Mapping, Iterable, Optional
-from .dtos import AuthorDto
-from ..repository import Author
+from dataclasses import dataclass
+from typing import Iterable, Mapping, Optional
+
+from sqlalchemy.orm import Session
+
+from gateway.sql import models
+
+from .dtos import AuthorDto, CreateAuthorDto
+from .mappers import author_model_to_dto, create_author_dto_to_model
 
 
+@dataclass
 class AuthorService:
-    """
-    Boundary representing an internal facade / external µ-service.
-    """
+    session: Session
 
-    repository: AuthorRepository
+    def create(self, dto: CreateAuthorDto) -> AuthorDto:
+        model = create_author_dto_to_model(dto)
+        self.session.add(model)
+        self.session.flush()
+        self.session.refresh(model)
+        return author_model_to_dto(model)
 
-    def __init__(self, repository):
-        self.repository = repository
+    @property
+    def _query(self):
+        return self.session.query(models.Author)
 
-    def many(self, ids: Iterable[UUID]) -> Mapping[UUID, AuthorDto]:
+    def first(self, id: int) -> Optional[AuthorDto]:
+        result = self._query.filter(models.Author.id == id).first()
+        return author_model_to_dto(result) if result is not None else result
+
+    def one(self, id: int) -> AuthorDto:
+        result = self._query.filter(models.Author.id == id).one()
+        return author_model_to_dto(result)
+
+    def many(self, ids: Iterable[int]) -> Mapping[int, AuthorDto]:
         return {
             dto.id: dto
             for dto in [
-                AuthorService._author_model_to_dto(model)
-                for model in self.repository.get_many(list(ids))
+                author_model_to_dto(model)
+                for model in self._query.where(models.Author.id.in_(ids)).all()
             ]
         }
-
-    def first(self, id: UUID) -> Optional[AuthorDto]:
-        return self.many([id]).get(id)
-
-    def one(self, id: UUID) -> AuthorDto:
-        result = self.first(id)
-        if result is not None:
-            return result
-        raise ValueError(f"Could not load {id}")
-
-    @staticmethod
-    def _author_model_to_dto(model: Author) -> AuthorDto:
-        return AuthorDto(model.id, model.first_name, model.last_name, model.book_ids)

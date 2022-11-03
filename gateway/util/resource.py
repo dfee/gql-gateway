@@ -10,5 +10,6 @@ def load_resource(mod_name, resource: str) -> str:
         )
     return data.decode("utf-8")
 
+
 def get_mod_path(modFile: str) -> Path:
     return Path(modFile).parent
