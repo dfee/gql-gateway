@@ -14,4 +14,4 @@ class Book(Resolver, typename="Book"):
         return Node.encode_id(self.parent)
 
     def resolve_author(self):
-        return self.context.dataloaders.author_by_id.load(self._parent.author_id).get()
+        return self.dataloaders.author_by_id.load(self._parent.author_id).get()

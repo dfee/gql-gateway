@@ -1,7 +1,6 @@
 import typing
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from dataclasses import dataclass
-from enum import Enum
 
 from marshmallow_dataclass import dataclass as mm_dataclass
 

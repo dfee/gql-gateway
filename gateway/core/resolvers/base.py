@@ -6,6 +6,7 @@ from graphql import GraphQLSchema
 from graphql.pyutils import camel_to_snake, snake_to_camel
 
 from gateway.context import Context
+from gateway.dataloaders import DataLoaderRegistry
 
 
 class ResolverMeta(type):
@@ -51,6 +52,10 @@ class Resolver(metaclass=ResolverMeta):
     @property
     def context(self) -> Context:
         return self.info.context
+
+    @property
+    def dataloaders(self) -> DataLoaderRegistry:
+        return self.context.dataloaders
 
 
 class InterfaceMeta(type):
