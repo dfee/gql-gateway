@@ -26,7 +26,7 @@ def as_context(val: Any) -> Context:
 
 def with_context(f):
     @wraps(f)
-    def wrapper(root, info, **kwargs):
-        return f(root, info, as_context(info.context), **kwargs)
+    def wrapper(root, info, *args, **kwargs):
+        return f(root, info, as_context(info.context), *args, **kwargs)
 
     return wrapper

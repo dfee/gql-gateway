@@ -63,7 +63,7 @@ def serve_graphene():
 
 
 def serve_core():
-    from gateway.core.schema import schema
+    from gateway.core.schema import make_schema
 
     app = Flask(__name__)
 
@@ -73,7 +73,7 @@ def serve_core():
             "graphql",
             batch=True,
             graphiql=True,
-            schema=schema,
+            schema=make_schema(),
         ),
     )
 
