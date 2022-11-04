@@ -4,7 +4,7 @@ from graphql_server.flask import GraphQLView
 from gateway.author import AuthorService
 from gateway.book import BookService
 from gateway.context import Context
-from gateway.graphene.dataloaders import DataLoaderRegistry
+from gateway.dataloaders import DataLoaderRegistry
 from gateway.sql.context import DbContext, bootstrap, make_static_pool_engine
 from gateway.sql.fixtures import load_fixtures
 

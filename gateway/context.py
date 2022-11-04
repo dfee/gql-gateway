@@ -4,7 +4,7 @@ from typing import Any, TypeGuard
 
 from gateway.author import AuthorService
 from gateway.book import BookService
-from gateway.graphene.dataloaders import DataLoaderRegistry
+from gateway.dataloaders import DataLoaderRegistry
 
 
 @dataclass

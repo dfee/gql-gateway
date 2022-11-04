@@ -6,11 +6,10 @@ from pytest_snapshot.plugin import Snapshot
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
-import gateway
 from gateway.author import AuthorDto, AuthorService
 from gateway.book import BookDto, BookService
 from gateway.context import Context
-from gateway.graphene.dataloaders import DataLoaderRegistry
+from gateway.dataloaders import DataLoaderRegistry
 from gateway.graphene.models import Author, Node
 from gateway.graphene.schema import schema
 from gateway.sql.context import DbContext, bootstrap, make_default_engine
