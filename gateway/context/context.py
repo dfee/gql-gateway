@@ -1,6 +1,8 @@
+import typing
 from dataclasses import dataclass
 from functools import wraps
-from typing import Any, TypeGuard
+
+from flask import Request
 
 from gateway.author import AuthorService
 from gateway.book import BookService
@@ -9,16 +11,17 @@ from gateway.dataloaders import DataLoaderRegistry
 
 @dataclass
 class Context:
-    dataloaders: DataLoaderRegistry
     author_service: AuthorService
     book_service: BookService
+    dataloaders: DataLoaderRegistry
+    request: typing.Optional[Request]
 
 
-def is_context(val: Any) -> TypeGuard[Context]:
+def is_context(val: typing.Any) -> typing.TypeGuard[Context]:
     return isinstance(val, Context)
 
 
-def as_context(val: Any) -> Context:
+def as_context(val: typing.Any) -> Context:
     if is_context(val):
         return val
     raise ValueError("Invalid context")

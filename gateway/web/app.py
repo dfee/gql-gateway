@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from graphql_server.flask import GraphQLView
 
 from gateway.author import AuthorService
@@ -24,11 +24,12 @@ def context_factory(db_context: DbContext):
         book_service = BookService(session)
 
         return Context(
+            author_service=author_service,
+            book_service=book_service,
             dataloaders=DataLoaderRegistry.setup(
                 author_service=author_service, book_service=book_service
             ),
-            author_service=author_service,
-            book_service=book_service,
+            request=request,
         )
 
     return _build
@@ -36,12 +37,8 @@ def context_factory(db_context: DbContext):
 
 # TODO: really need to use context_manager here...
 # probably on Flask's `g`
-factory = context_factory(db_context=setup_db())
-
-
-class CustomGraphQLView(GraphQLView):
-    def get_context(self):
-        return factory()
+db_context = setup_db()
+factory = context_factory(db_context)
 
 
 def serve_graphene():
@@ -51,9 +48,11 @@ def serve_graphene():
 
     app.add_url_rule(
         "/graphql",
-        view_func=CustomGraphQLView.as_view(
+        # view_func=CustomGraphQLView.as_view(
+        view_func=GraphQLView.as_view(
             "graphql",
             batch=True,
+            get_context=factory,
             graphiql=True,
             schema=schema.graphql_schema,
         ),
@@ -69,9 +68,10 @@ def serve_core():
 
     app.add_url_rule(
         "/graphql",
-        view_func=CustomGraphQLView.as_view(
+        view_func=GraphQLView.as_view(
             "graphql",
             batch=True,
+            get_context=factory,
             graphiql=True,
             schema=make_schema(),
         ),

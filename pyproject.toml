@@ -31,6 +31,7 @@ sqlalchemy = { extras = ["mypy"], version = "^1.4.42" }
 werkzeug = "2.0.3"
 marshmallow = "^3.18.0"
 marshmallow-dataclass = "^8.5.9"
+strawberry-graphql = { extras = ["debug-server"], version = "^0.140.0" }
 
 [tool.poetry.group.test.dependencies]
 ipdb = "^0.13.9"
@@ -46,3 +47,4 @@ pytest-snapshot = "^0.9.0"
 [tool.poetry.scripts]
 serve_core = "gateway.web:serve_core"
 serve_graphene = "gateway.web:serve_graphene"
+serve_strawberry = "gateway.strawberry.app:serve"

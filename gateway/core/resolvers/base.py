@@ -1,5 +1,5 @@
 import typing
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from dataclasses import dataclass
 
 from graphql import GraphQLSchema
@@ -24,12 +24,15 @@ class ResolverMeta(type):
         field_name = info.field_name
         field_name_sn = camel_to_snake(field_name)
         resolver_name = f"resolve_{field_name_sn}"
+        # do we have a resolve method?
         if hasattr(cls, resolver_name):
             ins = super(ResolverMeta, cls).__call__(parent, info)
             method = getattr(ins, resolver_name)
             return method(*args, **kwargs)
+        # does the parent object have a snake_case variant of the fieldName
         if hasattr(parent, field_name_sn):
             return getattr(parent, field_name_sn)
+        # does the parent object have a fieldName that matches? else None
         return getattr(parent, field_name, None)
 
 
