@@ -2,7 +2,7 @@ import typing
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 from functools import cache
 
-from graphene import ID, Field, Interface, List, ObjectType, String
+from graphene import ID, Field, Interface, List, NonNull, ObjectType, String
 from promise import Promise
 
 from gateway.author import AuthorDto
@@ -63,7 +63,7 @@ class Author(ObjectType):
     first_name = String(required=True)
     last_name = String(required=True)
     full_name = String(required=True)
-    books = List(lambda: Book, required=True)
+    books = List(NonNull(lambda: Book), required=True)
 
     @staticmethod
     def resolve_full_name(parent, info):

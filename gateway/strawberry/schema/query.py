@@ -11,13 +11,13 @@ from ._types import AuthorType, BookType
 from .node import Node
 
 
-def resolve_author(info: Info, id: str) -> typing.Optional[AuthorDto]:
+def resolve_author(info: Info, id: strawberry.ID) -> typing.Optional[AuthorDto]:
     context: Context = info.context
     _typename, _id = Node.decode_id(id)
     return context.dataloaders.author_by_id.load(_id).get()
 
 
-def resolve_book(info: Info, id: str) -> typing.Optional[BookDto]:
+def resolve_book(info: Info, id: strawberry.ID) -> typing.Optional[BookDto]:
     context: Context = info.context
     _typename, _id = Node.decode_id(id)
     return context.dataloaders.book_by_id.load(_id).get()

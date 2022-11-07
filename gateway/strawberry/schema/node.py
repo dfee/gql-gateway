@@ -15,7 +15,7 @@ node_map = {AuthorDto: "Author", BookDto: "Book"}
 @strawberry.interface
 class Node:
     @strawberry.field
-    def id(self) -> str:
+    def id(self) -> strawberry.ID:
         _id = self.id
         _typename = node_map.get(type(self))
         return urlsafe_b64encode(f"{_typename}:{_id}".encode("utf-8")).decode("utf-8")
@@ -32,7 +32,7 @@ class Node:
         return (_typename, _id_int)
 
     @staticmethod
-    def resolve_node(info: Info, id: str) -> "Node":
+    def resolve_node(info: Info, id: strawberry.ID) -> "Node":
         context: Context = info.context
         _typename, _id = Node.decode_id(id)
         if _typename == "Author":

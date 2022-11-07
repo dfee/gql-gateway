@@ -1,7 +1,7 @@
 # This file is generated. Please do not edit.
 
 type Author implements Node {
-  books: [Book]!
+  books: [Book!]!
   firstName: String!
   fullName: String!
   id: ID!
