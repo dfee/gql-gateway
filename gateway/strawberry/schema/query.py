@@ -7,11 +7,8 @@ from gateway.author import AuthorDto
 from gateway.book import BookDto
 from gateway.context import Context
 
+from ._types import AuthorType, BookType
 from .node import Node
-
-if typing.TYPE_CHECKING:
-    from .author import Author
-    from .book import Book
 
 
 def resolve_author(info: Info, id: str) -> typing.Optional[AuthorDto]:
@@ -28,10 +25,6 @@ def resolve_book(info: Info, id: str) -> typing.Optional[BookDto]:
 
 @strawberry.type
 class Query:
-    author: typing.Optional[
-        typing.Annotated["Author", strawberry.lazy(".author")]
-    ] = strawberry.field(resolver=resolve_author)
-    book: typing.Optional[
-        typing.Annotated["Book", strawberry.lazy(".book")]
-    ] = strawberry.field(resolver=resolve_book)
+    author: typing.Optional[AuthorType] = strawberry.field(resolver=resolve_author)
+    book: typing.Optional[BookType] = strawberry.field(resolver=resolve_book)
     node: typing.Optional[Node] = strawberry.field(resolver=Node.resolve_node)

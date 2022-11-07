@@ -7,6 +7,7 @@ from gateway.author import AuthorDto
 from gateway.book import BookDto
 from gateway.context import Context
 
+from ._types import AuthorType
 from .node import Node
 
 if typing.TYPE_CHECKING:
@@ -21,9 +22,7 @@ def resolve_author(root: BookDto, info: Info) -> "Author":
 @strawberry.type
 class Book(Node):
     title: str
-    author: typing.Annotated["Author", strawberry.lazy(".author")] = strawberry.field(
-        resolver=resolve_author
-    )
+    author: AuthorType = strawberry.field(resolver=resolve_author)
 
     @classmethod
     def is_type_of(cls, obj, _info) -> bool:

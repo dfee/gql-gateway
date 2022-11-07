@@ -7,10 +7,8 @@ from gateway.author import AuthorDto
 from gateway.book import BookDto
 from gateway.context import Context
 
+from ._types import BookType
 from .node import Node
-
-if typing.TYPE_CHECKING:
-    from .book import Book
 
 
 def resolve_books(root: AuthorDto, info: Info) -> typing.List[BookDto]:
@@ -22,9 +20,7 @@ def resolve_books(root: AuthorDto, info: Info) -> typing.List[BookDto]:
 class Author(Node):
     first_name: str
     last_name: str
-    books: typing.List[
-        typing.Annotated["Book", strawberry.lazy(".book")]
-    ] = strawberry.field(resolver=resolve_books)
+    books: typing.List[BookType] = strawberry.field(resolver=resolve_books)
 
     @classmethod
     def is_type_of(cls, obj, _info) -> bool:
