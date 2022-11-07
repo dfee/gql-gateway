@@ -5,9 +5,9 @@ from promise import Promise
 
 from gateway.author import AuthorDto
 from gateway.book import BookDto
+from gateway.context import Context, with_context
 from gateway.util.promise import unwrap_promise
 
-from ..context import Context, with_context
 from .models import Author, Book, Node
 
 
