@@ -1,2 +1,2 @@
-from .client import AuthorClient
+from .abc import AbstractAuthorClient
 from .dtos import AuthorCursorDto, AuthorDto, CreateAuthorDto

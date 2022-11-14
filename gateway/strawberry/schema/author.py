@@ -1,19 +1,18 @@
 import typing
 
 import strawberry
-from strawberry.types import Info
 
 from gateway.client.author import AuthorDto
 from gateway.client.book import BookDto
 from gateway.context import Context
 
+from ..info import Info
 from ._types import BookType
 from .node import Node
 
 
 def resolve_books(root: AuthorDto, info: Info) -> typing.List[BookDto]:
-    context: Context = info.context
-    return context.dataloaders.book_by_author_id.load(root.id).get()
+    return info.context.dataloaders.books_by_author_id.load(root.id)
 
 
 def resolve_full_name(root: AuthorDto) -> str:

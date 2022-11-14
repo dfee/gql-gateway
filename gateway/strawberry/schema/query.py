@@ -1,26 +1,24 @@
 import typing
 
 import strawberry
-from strawberry.types import Info
 
 from gateway.client.author import AuthorDto
 from gateway.client.book import BookDto
-from gateway.context import Context
+from gateway.util.goi import decode_id
 
+from ..info import Info
 from ._types import AuthorType, BookType
 from .node import Node
 
 
 def resolve_author(info: Info, id: strawberry.ID) -> typing.Optional[AuthorDto]:
-    context: Context = info.context
-    _typename, _id = Node.decode_id(id)
-    return context.dataloaders.author_by_id.load(_id).get()
+    _, _id = decode_id(id)
+    return info.context.dataloaders.author_by_id.load(_id)
 
 
 def resolve_book(info: Info, id: strawberry.ID) -> typing.Optional[BookDto]:
-    context: Context = info.context
-    _typename, _id = Node.decode_id(id)
-    return context.dataloaders.book_by_id.load(_id).get()
+    _, _id = decode_id(id)
+    return info.context.dataloaders.book_by_id.load(_id)
 
 
 @strawberry.type

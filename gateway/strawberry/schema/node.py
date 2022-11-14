@@ -1,12 +1,10 @@
-import typing
-from base64 import urlsafe_b64decode, urlsafe_b64encode
-
 import strawberry
-from strawberry.types import Info
 
 from gateway.client.author import AuthorDto
 from gateway.client.book import BookDto
-from gateway.context import Context
+from gateway.util.goi import decode_id, encode_id
+
+from ..info import Info
 
 # TODO
 node_map = {AuthorDto: "Author", BookDto: "Book"}
@@ -16,27 +14,13 @@ node_map = {AuthorDto: "Author", BookDto: "Book"}
 class Node:
     @strawberry.field
     def id(self) -> strawberry.ID:
-        _id = self.id
-        _typename = node_map.get(type(self))
-        return urlsafe_b64encode(f"{_typename}:{_id}".encode("utf-8")).decode("utf-8")
-
-    @staticmethod
-    def decode_id(id: str) -> typing.Tuple[str, int]:
-        _typename, _id = urlsafe_b64decode(id).decode("utf-8").split(":")
-        if _typename is None:
-            raise ValueError("Could not parse ID: typename")
-        if _id is None:
-            raise ValueError("Could not parse ID: id")
-        _id_int = int(_id, base=10)
-
-        return (_typename, _id_int)
+        return encode_id(node_map.get(type(self)), _id=self.id)
 
     @staticmethod
     def resolve_node(info: Info, id: strawberry.ID) -> "Node":
-        context: Context = info.context
-        _typename, _id = Node.decode_id(id)
+        _typename, _id = decode_id(id)
         if _typename == "Author":
-            return context.dataloaders.author_by_id.load(_id).get()
+            return info.context.dataloaders.author_by_id.load(_id)
         if _typename == "Book":
-            return context.dataloaders.book_by_id.load(_id).get()
+            return info.context.dataloaders.book_by_id.load(_id)
         return None

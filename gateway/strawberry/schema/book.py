@@ -1,12 +1,12 @@
 import typing
 
 import strawberry
-from strawberry.types import Info
 
 from gateway.client.author import AuthorDto
 from gateway.client.book import BookDto
 from gateway.context import Context
 
+from ..info import Info
 from ._types import AuthorType
 from .node import Node
 
@@ -14,9 +14,8 @@ if typing.TYPE_CHECKING:
     from .author import Author
 
 
-def resolve_author(root: BookDto, info: Info) -> "Author":
-    context: Context = info.context
-    return context.dataloaders.author_by_id.load(root.author_id).get()
+def resolve_author(root: BookDto, info: Info) -> AuthorDto:
+    return info.context.dataloaders.author_by_id.load(root.author_id)
 
 
 @strawberry.type

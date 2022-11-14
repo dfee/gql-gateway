@@ -1,16 +1,16 @@
 import pytest
-from graphql import ExecutionResult, GraphQLSchema
+from graphql import GraphQLSchema
 from pytest_snapshot.plugin import Snapshot
 
-from gateway.client.author import AuthorDto
-from gateway.client.book import BookDto
+from gateway.client.author import AbstractAuthorClient, AuthorDto
+from gateway.client.book import AbstractBookClient, BookDto
 from gateway.context import Context
 from gateway.dataloaders import DataLoaderRegistry
-from gateway.graphene.models import Author, Node
 from gateway.service.author import AuthorService
 from gateway.service.book import BookService
 from gateway.sql.context import DbContext
 from gateway.sql.fixtures import AUTHOR_ID_HERBERT, BOOK_ID_DUNE, load_fixtures
+from gateway.util.goi import encode_id
 from gateway.util.graphql import SCHEMA_FILENAME, pprint_schema, schema_dirpath
 from gateway.util.resource import load_resource as _load_resource
 
@@ -25,11 +25,13 @@ def _fixtures(db_context: DbContext) -> None:
 
 
 @pytest.fixture
-def context(author_service: AuthorService, book_service: BookService) -> Context:
+def context(
+    author_client: AbstractAuthorClient, book_client: AbstractBookClient
+) -> Context:
     return Context(
-        dataloaders=DataLoaderRegistry.setup(author_service, book_service),
-        author_service=author_service,
-        book_service=book_service,
+        dataloaders=DataLoaderRegistry.setup(author_client, book_client),
+        author_client=author_client,
+        book_client=book_client,
         request=None,
     )
 
@@ -57,7 +59,7 @@ def test_query_author(
     execute_sync, context: Context, author_herbert: AuthorDto, book_dune: BookDto
 ) -> None:
     query_string = load_resource("query_author.graphql")
-    variables = {"id": Node.encode_id(author_herbert)}
+    variables = {"id": encode_id("Author", author_herbert.id)}
 
     result = execute_sync(
         query_string, context_value=context, variable_values=variables
@@ -65,7 +67,7 @@ def test_query_author(
     assert result.data == {
         "author": {
             "firstName": author_herbert.first_name,
-            "books": [{"id": Node.encode_id(book_dune)}],
+            "books": [{"id": encode_id("Book", book_dune.id)}],
         }
     }
     assert not result.errors
@@ -75,14 +77,14 @@ def test_query_book(
     execute_sync, context: Context, author_herbert: AuthorDto, book_dune: BookDto
 ) -> None:
     query_string = load_resource("query_book.graphql")
-    variables = {"id": Node.encode_id(book_dune)}
+    variables = {"id": encode_id("Book", book_dune.id)}
     result = execute_sync(
         query_string, context_value=context, variable_values=variables
     )
     assert result.data == {
         "book": {
             "title": "Dune",
-            "author": {"id": Node.encode_id(author_herbert)},
+            "author": {"id": encode_id("Author", author_herbert.id)},
         }
     }
 
@@ -91,13 +93,13 @@ def test_query_node__author(
     execute_sync, context: Context, author_herbert: AuthorDto
 ) -> None:
     query_string = load_resource("query_node__author.graphql")
-    variables = dict(id=Node.encode_id(author_herbert))
+    variables = dict(id=encode_id("Author", author_herbert.id))
     result = execute_sync(
         query_string, context_value=context, variable_values=variables
     )
     assert result.data == {
         "node": {
-            "__typename": Author.__name__,
+            "__typename": "Author",
             "id": variables["id"],
             "firstName": author_herbert.first_name,
         }

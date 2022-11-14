@@ -1,12 +1,18 @@
 import typing
-from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
-from gateway.client.author.dtos import AuthorDto
+from gateway.client.author import AbstractAuthorClient, AuthorDto
+from gateway.service.author import AuthorService
+
+from ...dataloaders.base import adapt_map
 
 
-class AuthorClient(ABC):
-    @abstractmethod
-    def batch_load(
+@dataclass
+class AuthorClient(AbstractAuthorClient):
+    author_service: AuthorService
+
+    @adapt_map
+    def batch_load_by_id(
         self, ids: typing.Iterable[int]
     ) -> typing.Iterable[typing.Optional[AuthorDto]]:
-        pass
+        return self.author_service.many(ids)
