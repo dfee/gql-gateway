@@ -1,4 +1,4 @@
-query AuthorById($id: ID!) {
+query BookById($id: ID!) {
   book(id: $id) {
     title
     author {
