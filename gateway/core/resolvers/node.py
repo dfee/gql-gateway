@@ -1,8 +1,8 @@
 import typing
 from base64 import urlsafe_b64decode, urlsafe_b64encode
 
-from gateway.author.dtos import AuthorDto
-from gateway.book.dtos import BookDto
+from gateway.client.author import AuthorDto
+from gateway.client.book import BookDto
 
 from .base import Interface
 

@@ -1,4 +1,4 @@
-from gateway.book.dtos import BookDto
+from gateway.client.book import BookDto
 
 from .base import Resolver
 from .node import Node

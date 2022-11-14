@@ -1,8 +1,10 @@
 import typing
 from dataclasses import dataclass
 
-from gateway.author import AuthorDto, AuthorService
-from gateway.book import BookDto, BookService
+from gateway.client.author import AuthorDto
+from gateway.client.book import BookDto
+from gateway.service.author import AuthorService
+from gateway.service.book import BookService
 
 from .author import build_author_by_id
 from .base import TypedDataLoader

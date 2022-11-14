@@ -4,9 +4,9 @@ from functools import wraps
 
 from flask import Request
 
-from gateway.author import AuthorService
-from gateway.book import BookService
 from gateway.dataloaders import DataLoaderRegistry
+from gateway.service.author import AuthorService
+from gateway.service.book import BookService
 
 
 @dataclass

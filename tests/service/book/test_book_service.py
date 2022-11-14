@@ -1,10 +1,10 @@
 import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
-from gateway.author.dtos import AuthorDto, CreateAuthorDto
-from gateway.author.service import AuthorService
-from gateway.book.dtos import BookDto, CreateBookDto
-from gateway.book.service import BookService
+from gateway.client.author import AuthorDto, CreateAuthorDto
+from gateway.client.book import BookDto, CreateBookDto
+from gateway.service.author import AuthorService
+from gateway.service.book import BookService
 
 CREATE_AUTHOR_DTO_1 = CreateAuthorDto(id=1, first_name="Neil", last_name="Stephenson")
 CREATE_BOOK_DTO_1 = CreateBookDto(title="Snow Crash", author_id=CREATE_AUTHOR_DTO_1.id)

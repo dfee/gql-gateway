@@ -2,13 +2,13 @@ import pytest
 from graphql import ExecutionResult, GraphQLSchema
 from pytest_snapshot.plugin import Snapshot
 
-from gateway.author import AuthorDto, AuthorService
-from gateway.book import BookDto, BookService
+from gateway.client.author import AuthorDto
+from gateway.client.book import BookDto
 from gateway.context import Context
 from gateway.dataloaders import DataLoaderRegistry
 from gateway.graphene.models import Author, Node
-
-# from gateway.graphene.schema import schema
+from gateway.service.author import AuthorService
+from gateway.service.book import BookService
 from gateway.sql.context import DbContext
 from gateway.sql.fixtures import AUTHOR_ID_HERBERT, BOOK_ID_DUNE, load_fixtures
 from gateway.util.graphql import SCHEMA_FILENAME, pprint_schema, schema_dirpath

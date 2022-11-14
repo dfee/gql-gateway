@@ -1,10 +1,10 @@
 from flask import request
 from strawberry.flask.views import GraphQLView
 
-from gateway.author import AuthorService
-from gateway.book import BookService
 from gateway.context import Context
 from gateway.dataloaders import DataLoaderRegistry
+from gateway.service.author import AuthorService
+from gateway.service.book import BookService
 from gateway.sql.context import DbContext
 
 

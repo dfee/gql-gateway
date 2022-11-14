@@ -5,8 +5,8 @@ from functools import cache
 from graphene import ID, Field, Interface, List, NonNull, ObjectType, String
 from promise import Promise
 
-from gateway.author import AuthorDto
-from gateway.book import BookDto
+from gateway.client.author import AuthorDto
+from gateway.client.book import BookDto
 from gateway.context import Context, with_context
 from gateway.util.classproperty import classproperty
 from gateway.util.promise import unwrap_promise

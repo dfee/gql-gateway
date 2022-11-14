@@ -1,6 +1,6 @@
 import pytest
 
-from gateway.author.dtos import AuthorCursorDto
+from gateway.client.author import AuthorCursorDto
 
 
 class TestAuthorCursor:

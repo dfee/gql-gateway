@@ -1,9 +1,8 @@
 import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
-from gateway.author.dtos import AuthorDto, CreateAuthorDto
-from gateway.author.service import AuthorService
-from gateway.sql import DbContext, bootstrap, make_default_engine
+from gateway.client.author import AuthorDto, CreateAuthorDto
+from gateway.service.author import AuthorService
 
 CREATE_AUTHOR_DTO_1 = CreateAuthorDto(first_name="Neil", last_name="Stephenson")
 

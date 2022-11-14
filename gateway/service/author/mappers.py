@@ -1,8 +1,5 @@
-from dataclasses import dataclass
-
+from gateway.client.author import AuthorDto, CreateAuthorDto
 from gateway.sql import models
-
-from .dtos import AuthorDto, CreateAuthorDto
 
 
 def author_model_to_dto(model: models.Author) -> AuthorDto:

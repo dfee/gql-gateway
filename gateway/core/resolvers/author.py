@@ -1,4 +1,4 @@
-from gateway.author.dtos import AuthorDto
+from gateway.client.author import AuthorDto
 
 from .base import Resolver
 from .node import Node

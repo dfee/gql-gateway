@@ -3,8 +3,8 @@ import typing
 import strawberry
 from strawberry.types import Info
 
-from gateway.author import AuthorDto
-from gateway.book import BookDto
+from gateway.client.author import AuthorDto
+from gateway.client.book import BookDto
 from gateway.context import Context
 
 from ._types import AuthorType

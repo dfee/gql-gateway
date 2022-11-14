@@ -6,10 +6,10 @@ from functools import reduce
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from gateway.client.book import BookDto, CreateBookDto
 from gateway.sql import models
 from gateway.util.collector import Collector
 
-from .dtos import BookDto, CreateBookDto
 from .mappers import book_model_to_dto, create_book_dto_to_model, get_book_author_id
 
 

@@ -1,8 +1,8 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from gateway.author.service import AuthorService
-from gateway.book.service import BookService
+from gateway.service.author import AuthorService
+from gateway.service.book import BookService
 from gateway.sql import DbContext, bootstrap, make_default_engine
 
 
