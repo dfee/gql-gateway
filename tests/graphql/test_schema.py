@@ -4,8 +4,8 @@ from pytest_snapshot.plugin import Snapshot
 
 from gateway.client.author import AuthorClient, AuthorDto
 from gateway.client.book import BookClient, BookDto
-from gateway.context import Context
-from gateway.dataloader import DataLoaderRegistry
+from gateway.context import ClientRegistry, Context, DataLoaderRegistry
+from gateway.dataloader import FunctionalDataLoader
 from gateway.repository.context import DbContext
 from gateway.repository.fixtures import AUTHOR_ID_HERBERT, BOOK_ID_DUNE, load_fixtures
 from gateway.service.author import AuthorService
@@ -27,9 +27,14 @@ def _fixtures(db_context: DbContext) -> None:
 @pytest.fixture
 def context(author_client: AuthorClient, book_client: BookClient) -> Context:
     return Context(
-        dataloaders=DataLoaderRegistry.setup(author_client, book_client),
-        author_client=author_client,
-        book_client=book_client,
+        clients=ClientRegistry(author_client=author_client, book_client=book_client),
+        dataloaders=DataLoaderRegistry(
+            author_by_id=FunctionalDataLoader(author_client.batch_load_by_id),
+            book_by_id=FunctionalDataLoader(book_client.batch_load_by_id),
+            books_by_author_id=FunctionalDataLoader(
+                book_client.batch_load_by_author_id
+            ),
+        ),
         request=None,
     )
 

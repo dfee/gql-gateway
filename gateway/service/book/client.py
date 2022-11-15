@@ -2,7 +2,7 @@ import typing
 from dataclasses import dataclass
 
 from gateway.client.book import BookClient, BookDto
-from gateway.dataloader.base import adapt_map
+from gateway.dataloader import adapt_map
 from gateway.service.book import BookService
 
 

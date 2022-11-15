@@ -4,15 +4,27 @@ from functools import wraps
 
 from flask import Request
 
-from gateway.client.author import AuthorClient
-from gateway.client.book import BookClient
-from gateway.dataloader import DataLoaderRegistry
+from gateway.client.author import AuthorClient, AuthorDto
+from gateway.client.book import BookClient, BookDto
+from gateway.dataloader import DataLoader
+
+
+@dataclass
+class ClientRegistry:
+    author_client: AuthorClient
+    book_client: BookClient
+
+
+@dataclass
+class DataLoaderRegistry:
+    author_by_id: DataLoader[int, AuthorDto]
+    book_by_id: DataLoader[int, BookDto]
+    books_by_author_id: DataLoader[int, typing.List[BookDto]]
 
 
 @dataclass
 class Context:
-    author_client: AuthorClient
-    book_client: BookClient
+    clients: ClientRegistry
     dataloaders: DataLoaderRegistry
     request: typing.Optional[Request]
 

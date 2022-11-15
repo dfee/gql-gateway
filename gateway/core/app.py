@@ -2,7 +2,7 @@ from flask import Flask
 from graphql_server.flask import GraphQLView
 
 from gateway.repository import bootstrap_with_fixtures, make_static_pool_engine
-from gateway.service.context import make_context_factory
+from gateway.service.context_factory import make_context_factory
 
 from .schema import make_schema
 
