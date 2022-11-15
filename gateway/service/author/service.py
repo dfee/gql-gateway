@@ -4,7 +4,7 @@ from typing import Iterable, Mapping, Optional
 from sqlalchemy.orm import Session
 
 from gateway.client.author import AuthorDto, CreateAuthorDto
-from gateway.sql import models
+from gateway.repository import models
 
 from .mappers import author_model_to_dto, create_author_dto_to_model
 

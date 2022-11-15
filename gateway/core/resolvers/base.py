@@ -6,7 +6,7 @@ from graphql import GraphQLSchema
 from graphql.pyutils import camel_to_snake, snake_to_camel
 
 from gateway.context import Context
-from gateway.dataloaders import DataLoaderRegistry
+from gateway.dataloader import DataLoaderRegistry
 
 
 class ResolverMeta(type):

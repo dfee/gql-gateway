@@ -1,8 +1,8 @@
 import typing
 from dataclasses import dataclass
 
-from gateway.client.author import AbstractAuthorClient, AuthorDto
-from gateway.client.book import AbstractBookClient, BookDto
+from gateway.client.author import AuthorClient, AuthorDto
+from gateway.client.book import BookClient, BookDto
 
 from .base import DataLoader, FunctionalDataLoader
 
@@ -18,8 +18,8 @@ class DataLoaderRegistry:
     @classmethod
     def setup(
         cls: typing.Type[T],
-        author_client: AbstractAuthorClient,
-        book_client: AbstractBookClient,
+        author_client: AuthorClient,
+        book_client: BookClient,
     ) -> T:
         return cls(
             author_by_id=FunctionalDataLoader(author_client.batch_load_by_id),

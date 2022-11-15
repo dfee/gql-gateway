@@ -2,14 +2,14 @@ import pytest
 from graphql import GraphQLSchema
 from pytest_snapshot.plugin import Snapshot
 
-from gateway.client.author import AbstractAuthorClient, AuthorDto
-from gateway.client.book import AbstractBookClient, BookDto
+from gateway.client.author import AuthorClient, AuthorDto
+from gateway.client.book import BookClient, BookDto
 from gateway.context import Context
-from gateway.dataloaders import DataLoaderRegistry
+from gateway.dataloader import DataLoaderRegistry
+from gateway.repository.context import DbContext
+from gateway.repository.fixtures import AUTHOR_ID_HERBERT, BOOK_ID_DUNE, load_fixtures
 from gateway.service.author import AuthorService
 from gateway.service.book import BookService
-from gateway.sql.context import DbContext
-from gateway.sql.fixtures import AUTHOR_ID_HERBERT, BOOK_ID_DUNE, load_fixtures
 from gateway.util.goi import encode_id
 from gateway.util.graphql import SCHEMA_FILENAME, pprint_schema, schema_dirpath
 from gateway.util.resource import load_resource as _load_resource
@@ -25,9 +25,7 @@ def _fixtures(db_context: DbContext) -> None:
 
 
 @pytest.fixture
-def context(
-    author_client: AbstractAuthorClient, book_client: AbstractBookClient
-) -> Context:
+def context(author_client: AuthorClient, book_client: BookClient) -> Context:
     return Context(
         dataloaders=DataLoaderRegistry.setup(author_client, book_client),
         author_client=author_client,

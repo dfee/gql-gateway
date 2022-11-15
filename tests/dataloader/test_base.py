@@ -3,12 +3,7 @@ from typing import Iterable, Mapping, Optional
 
 import pytest
 
-from gateway.dataloaders import (
-    DataLoader,
-    FunctionalDataLoader,
-    adapt_map,
-    adapt_sparse,
-)
+from gateway.dataloader import DataLoader, FunctionalDataLoader, adapt_map, adapt_sparse
 
 
 @dataclass

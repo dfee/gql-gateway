@@ -1,5 +1,5 @@
 from gateway.client.author import AuthorDto, CreateAuthorDto
-from gateway.sql import models
+from gateway.repository import models
 
 
 def author_model_to_dto(model: models.Author) -> AuthorDto:

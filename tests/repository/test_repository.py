@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from gateway.sql.models import Author, Book
+from gateway.repository.models import Author, Book
 
 
 def test_author_create(session: Session):

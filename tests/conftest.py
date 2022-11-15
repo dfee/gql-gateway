@@ -1,13 +1,13 @@
 import pytest
 from sqlalchemy.orm import Session
 
-from gateway.client.author import AbstractAuthorClient
-from gateway.client.author.client import AuthorClient
-from gateway.client.book import AbstractBookClient
-from gateway.client.book.client import BookClient
+from gateway.client.author import AuthorClient
+from gateway.client.book import BookClient
+from gateway.repository import DbContext, bootstrap, make_default_engine
 from gateway.service.author import AuthorService
+from gateway.service.author.client import NativeAuthorClient
 from gateway.service.book import BookService
-from gateway.sql import DbContext, bootstrap, make_default_engine
+from gateway.service.book.client import NativeBookClient
 
 
 @pytest.fixture
@@ -32,10 +32,10 @@ def book_service(session) -> BookService:
 
 
 @pytest.fixture
-def author_client(author_service: AuthorService) -> AbstractAuthorClient:
-    return AuthorClient(author_service=author_service)
+def author_client(author_service: AuthorService) -> AuthorClient:
+    return NativeAuthorClient(author_service=author_service)
 
 
 @pytest.fixture
-def book_client(book_service: BookService) -> AbstractBookClient:
-    return BookClient(book_service=book_service)
+def book_client(book_service: BookService) -> BookClient:
+    return NativeBookClient(book_service=book_service)

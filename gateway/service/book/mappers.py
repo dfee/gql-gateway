@@ -1,5 +1,5 @@
 from gateway.client.book import BookDto, CreateBookDto
-from gateway.sql import models
+from gateway.repository import models
 
 
 def book_model_to_dto(model: models.Book) -> BookDto:
