@@ -1,3 +1,2 @@
-from gateway.client.author.client import AuthorClient
-
-from .dtos import AuthorCursorDto, AuthorDto, CreateAuthorDto
+from .client import *
+from .dtos import *

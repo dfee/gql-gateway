@@ -28,6 +28,7 @@ BatchLoadSparseCallable: TypeAlias = Union[
 
 
 def adapt_map(f: BatchLoadCallable) -> BatchLoadCallable:
+
     """
     Wrapper for a function or method that takes an array of keys (K), and
     returns a mapping from (K -> Optional[V]).

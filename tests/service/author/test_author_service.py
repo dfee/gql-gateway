@@ -1,10 +1,22 @@
 import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
-from gateway.client.author import AuthorDto, CreateAuthorDto
+from gateway.client.author import (
+    AuthorCursor,
+    AuthorDto,
+    AuthorPage,
+    AuthorQuery,
+    CreateAuthorDto,
+)
+from gateway.client.page import PageInfo
 from gateway.service.author import AuthorService
+from gateway.util.dataclass import b64_encode_dataclass
 
 CREATE_AUTHOR_DTO_1 = CreateAuthorDto(first_name="Neil", last_name="Stephenson")
+
+
+def create_author_dto_fixture(id: int) -> CreateAuthorDto:
+    return CreateAuthorDto(id=id, first_name=f"fname_{id}", last_name=f"lname_{id}")
 
 
 @pytest.fixture
@@ -47,3 +59,20 @@ def test_many(author_service: AuthorService, author1: AuthorDto) -> None:
 
 def test_many_none(author_service: AuthorService) -> None:
     assert author_service.many([1]) == {}
+
+
+def test_page(author_service: AuthorService) -> None:
+    created = [
+        author_service.create(create_author_dto_fixture(id)) for id in (range(5))
+    ]
+    query = AuthorQuery(first=3)
+    page = author_service.page(query)
+    assert page == AuthorPage(
+        nodes=created[0:3],
+        page_info=PageInfo(
+            has_next_page=True,
+            has_previous_page=False,
+            start_cursor=None,  # todo: bug, should return regardless of next page
+            end_cursor=b64_encode_dataclass(AuthorCursor(limit=3, offset=3, sorts=[])),
+        ),
+    )
