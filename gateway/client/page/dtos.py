@@ -1,36 +1,44 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field, replace
 from enum import Enum
-from typing import Any, Callable, ClassVar, Generic, Iterable, Optional, Type, TypeVar
+from functools import cached_property
+from typing import Any, ClassVar, Generic, Iterable, Optional, Tuple, Type, TypeVar
 
-from gateway.util.dataclass import b64_decode_dataclass
+from gateway.util.dataclass import b64_decode_dataclass, b64_encode_dataclass
 
 __all__ = [
-    "AfterLimitOffset",
-    "BeforeLimitOffset",
     "CursorDirection",
+    "CursorPreference",
     "LimitOffset",
     "LimitOffsetCursor",
+    "LimitOffsetPage",
     "LimitOffsetPageInfoMetadata",
+    "LimitOffsetPageMetadata",
+    "LimitOffsetPageQuery",
     "Page",
     "PageInfo",
     "PageQuery",
     "SortDirection",
 ]
 
+
 T = TypeVar("T")
 
 
-@dataclass(frozen=True)
-class PageQuery(ABC):
-    before: Optional[str] = field(default=None)
-    after: Optional[str] = field(default=None)
-    first: Optional[int] = field(default=None)
-    last: Optional[int] = field(default=None)
+class CursorDirection(Enum):
+    AFTER = "after"
+    BEFORE = "before"
 
-    @abstractproperty
-    def cursor(self) -> T:
-        pass
+
+class CursorPreference(Enum):
+    AFTER = "after"
+    BEFORE = "before"
+    DEFAULT = "default"
+
+
+class SortDirection(Enum):
+    ASC = "asc"
+    DESC = "desc"
 
 
 @dataclass(frozen=True)
@@ -47,144 +55,217 @@ class Page(Generic[T]):
     nodes: Iterable[T]
 
 
-class CursorDirection(Enum):
-    AFTER = "after"
-    BEFORE = "before"
-
-
-class SortDirection(Enum):
-    ASC = "asc"
-    DESC = "desc"
-
-
 @dataclass(frozen=True)
-class LimitOffsetPageInfoMetadata:
-    end_offset: Optional[int]
-    start_offset: Optional[int]
+class PageQuery(ABC, Generic[T]):
+    cursor_cls: ClassVar[Type[T]]
+    before: Optional[str] = field(default=None)
+    after: Optional[str] = field(default=None)
     first: Optional[int] = field(default=None)
     last: Optional[int] = field(default=None)
 
-    @property
-    def has_next_page(self):
-        return self.end_offset is not None
+    def __init_subclass__(cls, *, cursor_cls: Type[T], **kwargs) -> None:
+        super().__init_subclass__(**kwargs)
+        cls.cursor_cls = cursor_cls
 
-    @property
-    def has_previous_page(self):
-        return self.start_offset is not None
+    @cached_property
+    def cursor_preference(self) -> CursorPreference:
+        if self.after:
+            return CursorPreference.AFTER
+        if self.before:
+            return CursorPreference.BEFORE
+        return CursorPreference.DEFAULT
 
+    @cached_property
+    def after_cursor(self) -> Optional[T]:
+        return self.cursor_cls.decode(self.after) if self.after else None
 
-@dataclass(frozen=True)
-class LimitOffset(ABC):
-    @abstractproperty
-    def limit(self):
-        pass
-
-    @abstractproperty
-    def offset(self):
-        pass
+    @cached_property
+    def before_cursor(self) -> Optional[T]:
+        return self.cursor_cls.decode(self.before) if self.before else None
 
     @abstractmethod
-    def to_page_info_metadata(
-        self,
-        results: Iterable[Any],
-    ) -> LimitOffsetPageInfoMetadata:
+    def make_cursor(self) -> T:
+        """
+        Make a cursor for slicing based on properties of this PageQuery subtype.
+        Generally includes all properties except: after, before, first, & last.
+        """
         pass
 
-
-@dataclass(frozen=True)
-class AfterLimitOffset(LimitOffset):
-    _after: int
-    _first: int
-
-    @property
-    def limit(self):
-        return self._first + 1
-
-    @property
-    def offset(self):
-        return self._after
-
-    def to_page_info_metadata(
-        self,
-        results: Iterable[Any],
-    ) -> LimitOffsetPageInfoMetadata:
-        has_sentinel = len(results) == self.limit
-        after = self._after + self._first if has_sentinel else None
-        first = self._first if has_sentinel else None
-        before = self._after + 1 if self._after > 0 else None
-        last = min(self._first, self._after) if self._after > 0 else None
-
-        return LimitOffsetPageInfoMetadata(
-            end_offset=after,
-            first=first,
-            start_offset=before,
-            last=last,
-        )
+    @cached_property
+    def preferred_cursor(self) -> T:
+        """
+        The cursor for slicing the query, by preference: after, before, default.
+        """
+        if self.cursor_preference is CursorPreference.AFTER:
+            return self.after_cursor
+        if self.cursor_preference is CursorPreference.BEFORE:
+            return self.before_cursor
+        if self.cursor_preference is CursorPreference.DEFAULT:
+            return self.make_cursor()
 
 
 @dataclass(frozen=True)
-class BeforeLimitOffset(LimitOffset):
-    _before: int
-    _last: int
+class LimitOffset:
+    after: int
+    first: int
 
     @property
     def limit(self):
-        return self._before if self._before - self._last < 0 else self._last
+        if self.after:
+            return self.first + 2
+        return self.first + 1
 
     @property
     def offset(self):
-        return max(self._before - self._last - 1, 0)
+        if self.after:
+            return self.after - 1
+        return 0
 
-    def to_page_info_metadata(
+    def to_page_metadata(
         self,
         results: Iterable[Any],
-    ) -> LimitOffsetPageInfoMetadata:
-        has_sentinel = len(results) == self.limit
-        has_head = self._before - self._last == 0
-        after = max(self._before - 1, 0)
-        first = self._last
-        before = self._before - self._last if (has_sentinel and not has_head) else None
-        last = (self._last if self._last <= before else before) if before else None
+    ) -> "LimitOffsetPageMetadata":
+        results_count = len(results)
+        if self.after > 0:
+            return LimitOffsetPageMetadata(
+                nodes=results[1 : self.limit - 1],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=results_count > 0,
+                    has_next_page=results_count == self.limit,
+                    start_offset=(
+                        self.after + 1
+                        if results_count > 1
+                        else self.after
+                        if results_count
+                        else 0
+                    ),
+                    end_offset=(
+                        self.offset + self.limit - 1
+                        if results_count == self.limit
+                        else self.offset + results_count
+                        if results_count
+                        else 0
+                    ),
+                ),
+            )
 
-        return LimitOffsetPageInfoMetadata(
-            end_offset=after,
-            first=first,
-            start_offset=before,
-            last=last,
+        return LimitOffsetPageMetadata(
+            nodes=results[: self.limit - 1],
+            page_info_metadata=LimitOffsetPageInfoMetadata(
+                has_previous_page=False,
+                has_next_page=results_count == self.limit,
+                start_offset=(self.after + 1 if results_count else 0),
+                end_offset=(
+                    self.after + self.limit - 1
+                    if results_count == self.limit
+                    else self.after + results_count
+                    if results_count
+                    else 0
+                ),
+            ),
         )
+
+    @classmethod
+    def reverse(cls: "LimitOffset", before: int, last: int) -> "LimitOffset":
+        if before - last >= 0:
+            return cls(after=before - last, first=last)
+        return cls(after=0, first=before)
 
 
 @dataclass(frozen=True)
 class LimitOffsetCursor(ABC):
-    limit: int
-    offset: int
-    limiter: ClassVar[Callable[..., int]]
+    offset: int = field(default=0)
+    limit_ceiling: ClassVar[int]
+    limit_default: ClassVar[int]
 
-    def to_limit_offset(
+    def __init_subclass__(cls, limit_default=10, limit_ceiling=100, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.limit_default = limit_default
+        cls.limit_ceiling = limit_ceiling
+
+    def make_limit_offset(
         self,
         direction: CursorDirection,
+        limit: Optional[int] = None,
     ) -> LimitOffset:
-        return (
-            AfterLimitOffset(
-                _after=self.offset,
-                _first=self.limit,
-            )
-            if direction is CursorDirection.AFTER
-            else BeforeLimitOffset(
-                _before=self.offset,
-                _last=self.limit,
-            )
+        _limit = self._clamp_limit(limit)
+        if direction is CursorDirection.AFTER:
+            return LimitOffset(after=self.offset, first=_limit)
+        return LimitOffset.reverse(before=self.offset, last=_limit)
+
+    def replace_offset(self, offset: int):
+        return replace(self, offset=offset)
+
+    def encode(self):
+        return b64_encode_dataclass(self)
+
+    @classmethod
+    def decode(cls: Type[T], value: str) -> T:
+        return b64_decode_dataclass(cls, value)
+
+    @classmethod
+    def _clamp_limit(cls, value: Optional[int]) -> int:
+        return max(
+            0,
+            min(
+                cls.limit_ceiling,
+                next(v for v in [value, cls.limit_default] if v is not None),
+            ),
         )
 
-    @classmethod
-    def decode(
-        cls: Type[T],
-        value: str,
-        limit: int = None,
-    ) -> T:
-        cursor: "LimitOffsetCursor" = b64_decode_dataclass(cls, value)
-        return replace(cursor, limit=cls.limiter(limit, cursor.limit))
 
+LOC = TypeVar("LOC", bound=LimitOffsetCursor)
+
+
+@dataclass(frozen=True)
+class LimitOffsetPageInfoMetadata:
+    end_offset: int
+    has_next_page: bool
+    has_previous_page: bool
+    start_offset: int
+
+
+@dataclass
+class LimitOffsetPageMetadata(Generic[T]):
+    nodes: Iterable[T]
+    page_info_metadata: LimitOffsetPageInfoMetadata
+
+    def page_info_from_template_cursor(self, template_cursor: LOC) -> PageInfo:
+        md = self.page_info_metadata
+        return PageInfo(
+            has_next_page=md.has_next_page,
+            has_previous_page=md.has_previous_page,
+            start_cursor=template_cursor.replace_offset(md.start_offset).encode(),
+            end_cursor=template_cursor.replace_offset(md.end_offset).encode(),
+        )
+
+
+@dataclass(frozen=True)
+class LimitOffsetPageQuery(PageQuery[LOC], Generic[LOC], cursor_cls=...):
+    @cached_property
+    def limit_offset(self) -> LimitOffset:
+        if self.cursor_preference is CursorPreference.BEFORE:
+            return self.preferred_cursor.make_limit_offset(
+                direction=CursorDirection.BEFORE,
+                limit=self.last,
+            )
+        return self.preferred_cursor.make_limit_offset(
+            direction=CursorDirection.AFTER,
+            limit=self.first,
+        )
+
+
+LOC_Q = TypeVar("LOC_Q", bound=LimitOffsetPageQuery)
+
+
+@dataclass(frozen=True)
+class LimitOffsetPage(Page[T], Generic[LOC_Q, T]):
     @classmethod
-    def with_defaults(cls: Type[T], **kwargs) -> T:
-        return cls(**{"limit": 100, "offset": 0, **kwargs})
+    def derive_nodes_and_page_info(
+        cls,
+        query: LOC_Q,
+        results: Iterable[T],
+    ) -> Tuple[Iterable[T], Page]:
+        page_metadata = query.limit_offset.to_page_metadata(results)
+        page_info = page_metadata.page_info_from_template_cursor(query.preferred_cursor)
+        return page_metadata.nodes, page_info

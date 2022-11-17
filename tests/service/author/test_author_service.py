@@ -61,18 +61,47 @@ def test_many_none(author_service: AuthorService) -> None:
     assert author_service.many([1]) == {}
 
 
-def test_page(author_service: AuthorService) -> None:
+def test_pages(author_service: AuthorService) -> None:
+    creation_count = 5
     created = [
-        author_service.create(create_author_dto_fixture(id)) for id in (range(5))
+        author_service.create(create_author_dto_fixture(id))
+        for id in (range(creation_count))
     ]
-    query = AuthorQuery(first=3)
-    page = author_service.page(query)
-    assert page == AuthorPage(
-        nodes=created[0:3],
-        page_info=PageInfo(
-            has_next_page=True,
-            has_previous_page=False,
-            start_cursor=None,  # todo: bug, should return regardless of next page
-            end_cursor=b64_encode_dataclass(AuthorCursor(limit=3, offset=3, sorts=[])),
+    queries = [
+        AuthorQuery(first=3),
+        AuthorQuery(first=3, after=AuthorCursor(offset=1).encode()),
+        AuthorQuery(last=3, before=AuthorCursor(offset=5).encode()),
+    ]
+    results = author_service.pages(queries)
+    assert results == [
+        AuthorPage(
+            nodes=created[0:3],
+            page_info=PageInfo(
+                has_next_page=True,
+                has_previous_page=False,
+                start_cursor=queries[0].preferred_cursor.replace_offset(1).encode(),
+                end_cursor=queries[0].preferred_cursor.replace_offset(3).encode(),
+            ),
+            total_count=creation_count,
         ),
-    )
+        AuthorPage(
+            nodes=created[1:4],
+            page_info=PageInfo(
+                has_next_page=True,
+                has_previous_page=True,
+                start_cursor=queries[1].preferred_cursor.replace_offset(2).encode(),
+                end_cursor=queries[1].preferred_cursor.replace_offset(4).encode(),
+            ),
+            total_count=creation_count,
+        ),
+        AuthorPage(
+            nodes=created[2:5],
+            page_info=PageInfo(
+                has_next_page=False,
+                has_previous_page=True,
+                start_cursor=queries[2].preferred_cursor.replace_offset(3).encode(),
+                end_cursor=queries[2].preferred_cursor.replace_offset(5).encode(),
+            ),
+            total_count=creation_count,
+        ),
+    ]

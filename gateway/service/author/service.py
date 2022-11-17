@@ -85,19 +85,26 @@ class AuthorService:
             ]
         }
 
-    def pages(self, queries: Iterable[AuthorQuery]) -> Mapping[AuthorQuery, AuthorPage]:
+    def pages(self, queries: Iterable[AuthorQuery]) -> Iterable[AuthorPage]:
         # alternatively, you can build this as one query in SQL.
         # remember, dataloaders are for batching <to> the remote entity.
         # it's up to the "service" layer to batch appropriately, trading off
         # complexity and performance with maintenance cost.
-        return {query: self.page(query) for query in queries}
+        return [self.page(query) for query in queries]
 
     def page(self, query: AuthorQuery) -> AuthorPage:
-        sorts = sorts_to_sqla(query.sorts)
-        limit = query.limit_offset.limit
-        offset = query.limit_offset.offset
-        nodes = [
-            author_model_to_dto(model)
-            for model in self._query.order_by(*sorts).limit(limit).offset(offset).all()
-        ]
-        return AuthorPage.from_query_and_nodes(query, nodes)
+        selection = self.selection(query.sorts)
+        return AuthorPage.build(
+            query=query,
+            results=[
+                author_model_to_dto(model)
+                for model in selection.limit(query.limit_offset.limit)
+                .offset(query.limit_offset.offset)
+                .all()
+            ],
+            total_count=selection.count(),
+        )
+
+    def selection(self, sorts: Iterable[AuthorSort]):
+        # Use this method for sorts / filters
+        return self._query.order_by(*sorts_to_sqla(sorts))
