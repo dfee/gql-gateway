@@ -18,7 +18,7 @@ __all__ = [
     "Page",
     "PageInfo",
     "PageQuery",
-    "SortDirection",
+    "SortOrder",
 ]
 
 
@@ -36,7 +36,7 @@ class CursorPreference(Enum):
     DEFAULT = "default"
 
 
-class SortDirection(Enum):
+class SortOrder(Enum):
     ASC = "asc"
     DESC = "desc"
 

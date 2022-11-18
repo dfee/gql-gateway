@@ -1,10 +1,10 @@
-import typing
 from abc import ABC, abstractmethod
+from typing import Iterable, Optional
 
 from gateway.client.author.dtos import (
     AuthorDto,
-    AuthorPage,
-    AuthorQuery,
+    AuthorPageDto,
+    AuthorQueryDto,
     CreateAuthorDto,
 )
 
@@ -17,13 +17,11 @@ class AuthorClient(ABC):
         pass
 
     @abstractmethod
-    def batch_load_by_id(
-        self, ids: typing.Iterable[int]
-    ) -> typing.Iterable[typing.Optional[AuthorDto]]:
+    def batch_load_by_id(self, ids: Iterable[int]) -> Iterable[Optional[AuthorDto]]:
         pass
 
     @abstractmethod
     def batch_load_by_query(
-        self, page_queries: typing.Iterable[AuthorQuery]
-    ) -> typing.Iterable[typing.Optional[AuthorPage]]:
+        self, page_queries: Iterable[AuthorQueryDto]
+    ) -> Iterable[AuthorPageDto]:
         pass

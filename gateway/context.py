@@ -4,7 +4,7 @@ from functools import wraps
 
 from flask import Request
 
-from gateway.client.author import AuthorClient, AuthorDto
+from gateway.client.author import AuthorClient, AuthorDto, AuthorPageDto, AuthorQueryDto
 from gateway.client.book import BookClient, BookDto
 from gateway.dataloader import DataLoader
 
@@ -18,6 +18,7 @@ class ClientRegistry:
 @dataclass
 class DataLoaderRegistry:
     author_by_id: DataLoader[int, AuthorDto]
+    author_page_by_query: DataLoader[AuthorQueryDto, AuthorPageDto]
     book_by_id: DataLoader[int, BookDto]
     books_by_author_id: DataLoader[int, typing.List[BookDto]]
 

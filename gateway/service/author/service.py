@@ -5,15 +5,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import asc, desc
 
 from gateway.client.author import (
-    AuthorCursor,
     AuthorDto,
-    AuthorPage,
-    AuthorPageSortBy,
-    AuthorQuery,
-    AuthorSort,
+    AuthorPageDto,
+    AuthorQueryDto,
+    AuthorSortByDto,
+    AuthorSortDto,
     CreateAuthorDto,
 )
-from gateway.client.page import SortDirection
+from gateway.client.page import SortOrder
 from gateway.repository import models
 
 from .mappers import author_model_to_dto, create_author_dto_to_model
@@ -23,14 +22,14 @@ T = TypeVar("T")
 
 # TODO: move this to a utils file. it's common.
 SORT_ORDER_TO_SQLA = {
-    SortDirection.ASC: asc,
-    SortDirection.DESC: desc,
+    SortOrder.ASC: asc,
+    SortOrder.DESC: desc,
 }
 
 AUTHOR_PAGE_SORT_BY_TO_COLUMN_MAP = {
     # TODO: add created_at to the model :)
-    AuthorPageSortBy.CREATED_AT: models.Author.id,
-    AuthorPageSortBy.FIRST_NAME: models.Author.first_name,
+    AuthorSortByDto.CREATED_AT: models.Author.id,
+    AuthorSortByDto.FIRST_NAME: models.Author.first_name,
 }
 
 # to ensure stable sorting, i.e. when no prev sorts can deterministically order
@@ -40,7 +39,7 @@ AUTHOR_TAIL_SORT = asc(models.Author.id)
 AUTHOR_LIMIT_CEILING = 100
 
 
-def sorts_to_sqla(sorts: Iterable[AuthorSort]):
+def sorts_to_sqla(sorts: Iterable[AuthorSortDto]):
     _sorts = []
     for sort in sorts:
         col = AUTHOR_PAGE_SORT_BY_TO_COLUMN_MAP[sort.by]
@@ -85,16 +84,16 @@ class AuthorService:
             ]
         }
 
-    def pages(self, queries: Iterable[AuthorQuery]) -> Iterable[AuthorPage]:
+    def pages(self, queries: Iterable[AuthorQueryDto]) -> Iterable[AuthorPageDto]:
         # alternatively, you can build this as one query in SQL.
         # remember, dataloaders are for batching <to> the remote entity.
         # it's up to the "service" layer to batch appropriately, trading off
         # complexity and performance with maintenance cost.
         return [self.page(query) for query in queries]
 
-    def page(self, query: AuthorQuery) -> AuthorPage:
+    def page(self, query: AuthorQueryDto) -> AuthorPageDto:
         selection = self.selection(query.sorts)
-        return AuthorPage.build(
+        return AuthorPageDto.build(
             query=query,
             results=[
                 author_model_to_dto(model)
@@ -105,6 +104,6 @@ class AuthorService:
             total_count=selection.count(),
         )
 
-    def selection(self, sorts: Iterable[AuthorSort]):
+    def selection(self, sorts: Iterable[AuthorSortDto]):
         # Use this method for sorts / filters
         return self._query.order_by(*sorts_to_sqla(sorts))

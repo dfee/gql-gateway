@@ -1,11 +1,11 @@
-import typing
 from dataclasses import dataclass
+from typing import Iterable, Mapping
 
 from gateway.client.author import (
     AuthorClient,
     AuthorDto,
-    AuthorPage,
-    AuthorQuery,
+    AuthorPageDto,
+    AuthorQueryDto,
     CreateAuthorDto,
 )
 from gateway.dataloader import adapt_map
@@ -20,13 +20,10 @@ class NativeAuthorClient(AuthorClient):
         return self.author_service.create(dto)
 
     @adapt_map
-    def batch_load_by_id(
-        self, ids: typing.Iterable[int]
-    ) -> typing.Mapping[int, AuthorDto]:
+    def batch_load_by_id(self, ids: Iterable[int]) -> Mapping[int, AuthorDto]:
         return self.author_service.many(ids)
 
-    @adapt_map
     def batch_load_by_query(
-        self, page_queries: typing.Iterable[AuthorQuery]
-    ) -> typing.Mapping[AuthorQuery, AuthorPage]:
+        self, page_queries: Iterable[AuthorQueryDto]
+    ) -> Iterable[AuthorPageDto]:
         return self.author_service.pages(page_queries)

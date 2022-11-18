@@ -22,6 +22,9 @@ def make_context_factory(db_context: DbContext):
         )
         data_loader_registry = DataLoaderRegistry(
             author_by_id=FunctionalDataLoader(author_client.batch_load_by_id),
+            author_page_by_query=FunctionalDataLoader(
+                author_client.batch_load_by_query
+            ),
             book_by_id=FunctionalDataLoader(book_client.batch_load_by_id),
             books_by_author_id=FunctionalDataLoader(
                 book_client.batch_load_by_author_id

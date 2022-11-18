@@ -4,8 +4,8 @@ from graphql import GraphQLSchema, graphql_sync
 from strawberry import Schema as StrawberrySchema
 
 from gateway.core.schema import make_schema as _make_core_schema
-from gateway.graphene.schema import schema as _graphene_schema
-from gateway.strawberry.schema import schema as _strawberry_schema
+from gateway.graphene.schema import make_schema as _make_graphene_schema
+from gateway.strawberry.schema import make_schema as _make_strawberry_schema
 
 
 @pytest.fixture
@@ -15,12 +15,12 @@ def core_schema() -> GraphQLSchema:
 
 @pytest.fixture
 def graphene_schema() -> GrapheneSchema:
-    yield _graphene_schema
+    return _make_graphene_schema()
 
 
 @pytest.fixture
 def strawberry_schema() -> StrawberrySchema:
-    yield _strawberry_schema
+    return _make_strawberry_schema()
 
 
 @pytest.fixture
@@ -34,7 +34,11 @@ def strawberry_native_schema(strawberry_schema: StrawberrySchema) -> GraphQLSche
 
 
 @pytest.fixture(
-    params=["core_schema", "graphene_native_schema", "strawberry_native_schema"]
+    params=[
+        "core_schema",
+        "graphene_native_schema",
+        "strawberry_native_schema",
+    ]
 )
 def native_schema(request: pytest.FixtureRequest):
     yield request.getfixturevalue(request.param)

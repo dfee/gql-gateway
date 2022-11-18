@@ -1,6 +1,11 @@
 import pytest
 
-from gateway.client.author import AuthorCursor, AuthorDto, AuthorQuery, AuthorSort
+from gateway.client.author import (
+    AuthorCursorDto,
+    AuthorDto,
+    AuthorQueryDto,
+    AuthorSortDto,
+)
 from tests.util.dataclass import assert_b64_codec
 
 
@@ -9,22 +14,27 @@ def author_fixture(id: int) -> AuthorDto:
 
 
 class TestAuthorSort:
-    @pytest.mark.parametrize("sort", [AuthorSort()])
+    @pytest.mark.parametrize("sort", [AuthorSortDto()])
     def test_codec(self, sort) -> None:
-        assert_b64_codec(AuthorSort, sort)
+        assert_b64_codec(AuthorSortDto, sort)
 
 
-@pytest.mark.parametrize("cursor", [AuthorCursor()])
-def test_author_cursor_codec(cursor: AuthorCursor) -> None:
-    assert_b64_codec(AuthorCursor, cursor)
+@pytest.mark.parametrize("cursor", [AuthorCursorDto()])
+def test_author_cursor_codec(cursor: AuthorCursorDto) -> None:
+    assert_b64_codec(AuthorCursorDto, cursor)
 
 
 @pytest.mark.parametrize(
     ("query", "cursor"),
     [
-        [AuthorQuery(), AuthorCursor()],
-        [AuthorQuery(sorts=[AuthorSort()]), AuthorCursor(sorts=[AuthorSort()])],
+        [AuthorQueryDto(), AuthorCursorDto()],
+        [
+            AuthorQueryDto(sorts=[AuthorSortDto()]),
+            AuthorCursorDto(sorts=[AuthorSortDto()]),
+        ],
     ],
 )
-def test_author_query_make_cursor(query: AuthorQuery, cursor: AuthorCursor) -> None:
+def test_author_query_make_cursor(
+    query: AuthorQueryDto, cursor: AuthorCursorDto
+) -> None:
     assert query.make_cursor() == cursor

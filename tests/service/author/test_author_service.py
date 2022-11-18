@@ -2,10 +2,10 @@ import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
 from gateway.client.author import (
-    AuthorCursor,
+    AuthorCursorDto,
     AuthorDto,
-    AuthorPage,
-    AuthorQuery,
+    AuthorPageDto,
+    AuthorQueryDto,
     CreateAuthorDto,
 )
 from gateway.client.page import PageInfo
@@ -68,13 +68,13 @@ def test_pages(author_service: AuthorService) -> None:
         for id in (range(creation_count))
     ]
     queries = [
-        AuthorQuery(first=3),
-        AuthorQuery(first=3, after=AuthorCursor(offset=1).encode()),
-        AuthorQuery(last=3, before=AuthorCursor(offset=5).encode()),
+        AuthorQueryDto(first=3),
+        AuthorQueryDto(first=3, after=AuthorCursorDto(offset=1).encode()),
+        AuthorQueryDto(last=3, before=AuthorCursorDto(offset=5).encode()),
     ]
     results = author_service.pages(queries)
     assert results == [
-        AuthorPage(
+        AuthorPageDto(
             nodes=created[0:3],
             page_info=PageInfo(
                 has_next_page=True,
@@ -84,7 +84,7 @@ def test_pages(author_service: AuthorService) -> None:
             ),
             total_count=creation_count,
         ),
-        AuthorPage(
+        AuthorPageDto(
             nodes=created[1:4],
             page_info=PageInfo(
                 has_next_page=True,
@@ -94,7 +94,7 @@ def test_pages(author_service: AuthorService) -> None:
             ),
             total_count=creation_count,
         ),
-        AuthorPage(
+        AuthorPageDto(
             nodes=created[2:5],
             page_info=PageInfo(
                 has_next_page=False,

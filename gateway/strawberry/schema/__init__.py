@@ -1,5 +1,6 @@
-import strawberry
-
-from .query import Query
-
-schema = strawberry.Schema(query=Query)
+from .author import *
+from .book import *
+from .node import *
+from .page import *
+from .query import *
+from .schema import *

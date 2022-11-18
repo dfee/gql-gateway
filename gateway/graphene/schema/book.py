@@ -1,11 +1,12 @@
 from graphene import Field, ObjectType, String
-from promise import Promise
 
 from gateway.client.author import AuthorDto
 from gateway.client.book import BookDto
 from gateway.context import Context, with_context
 
 from .node import Node
+
+__all__ = ["Book"]
 
 
 class Book(ObjectType):
@@ -17,7 +18,7 @@ class Book(ObjectType):
 
     @staticmethod
     @with_context
-    def resolve_author(parent: BookDto, _info, context: Context) -> Promise[AuthorDto]:
+    def resolve_author(parent: BookDto, _info, context: Context) -> AuthorDto:
         return context.dataloaders.author_by_id.load(parent.author_id)
 
     @classmethod

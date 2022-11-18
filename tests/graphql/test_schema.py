@@ -30,6 +30,7 @@ def context(author_client: AuthorClient, book_client: BookClient) -> Context:
         clients=ClientRegistry(author_client=author_client, book_client=book_client),
         dataloaders=DataLoaderRegistry(
             author_by_id=FunctionalDataLoader(author_client.batch_load_by_id),
+            author_page_by_query=(author_client.batch_load_by_query),
             book_by_id=FunctionalDataLoader(book_client.batch_load_by_id),
             books_by_author_id=FunctionalDataLoader(
                 book_client.batch_load_by_author_id
@@ -49,9 +50,9 @@ def book_dune(_fixtures: None, book_service: BookService) -> BookDto:
     return book_service.one(BOOK_ID_DUNE)
 
 
-def test_snapshot(native_schema: GraphQLSchema, snapshot: Snapshot) -> None:
+def test_snapshot(strawberry_native_schema: GraphQLSchema, snapshot: Snapshot) -> None:
     banner = "# This file is generated. Please do not edit."
-    printed = pprint_schema(native_schema)
+    printed = pprint_schema(strawberry_native_schema)
     concatenated = "\n\n".join([banner, printed])
 
     snapshot.snapshot_dir = schema_dirpath()

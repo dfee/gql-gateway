@@ -9,6 +9,10 @@ from ..info import Info
 # TODO
 node_map = {AuthorDto: "Author", BookDto: "Book"}
 
+__all__ = [
+    "Node",
+]
+
 
 @strawberry.interface
 class Node:

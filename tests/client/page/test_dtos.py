@@ -16,7 +16,7 @@ from gateway.client.page import (
     LimitOffsetPageMetadata,
     LimitOffsetPageQuery,
     PageInfo,
-    SortDirection,
+    SortOrder,
 )
 from gateway.util.dataclass import b64_encode_dataclass
 
@@ -34,7 +34,7 @@ class FooSortBy(Enum):
 @dataclass(frozen=True)
 class FooSort:
     by: FooSortBy
-    direction: SortDirection
+    order: SortOrder
 
 
 @dataclass_json
@@ -286,7 +286,12 @@ def test_limit_offset_reverse(
         ],
     ],
 )
-def test_to_limit_offset(offset, limit, direction, limit_offset):
+def test_to_limit_offset(
+    offset: int,
+    limit: int,
+    direction: CursorDirection,
+    limit_offset: LimitOffset,
+) -> None:
     ins = FooLimitOffsetCursor(offset=offset)
     assert ins.make_limit_offset(direction=direction, limit=limit) == limit_offset
 
@@ -294,7 +299,7 @@ def test_to_limit_offset(offset, limit, direction, limit_offset):
 def test_limit_offset_cursor__replace_offset():
     cursor = FooLimitOffsetCursor(
         offset=0,
-        sorts=[FooSort(by=FooSortBy.ID, direction=SortDirection.ASC)],
+        sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
         has_even_id=True,
     )
     assert cursor.replace_offset(5) == FooLimitOffsetCursor(
@@ -307,7 +312,7 @@ def test_limit_offset_cursor__replace_offset():
 def test_limit_offset_cursor__codec():
     cursor = FooLimitOffsetCursor(
         offset=0,
-        sorts=[FooSort(by=FooSortBy.ID, direction=SortDirection.ASC)],
+        sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
         has_even_id=True,
     )
     assert FooLimitOffsetCursor.decode(cursor.encode()) == cursor
@@ -395,7 +400,7 @@ def test_limit_offset_page_metadata__page_info_from_template_cursor():
 
     template_cursor = FooLimitOffsetCursor(
         offset=4,
-        sorts=[FooSort(by=FooSortBy.ID, direction=SortDirection.ASC)],
+        sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
         has_even_id=True,
     )
 
@@ -419,7 +424,7 @@ def test_limit_offset_page__derive_nodes_and_page_info():
     query = FooLimitOffsetPageQuery(
         first=5,
         has_even_id=True,
-        sorts=[FooSort(by=FooSortBy.ID, direction=SortDirection.ASC)],
+        sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
     )
     results = [Foo(id) for id in range(6)]
 

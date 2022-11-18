@@ -4,20 +4,15 @@ from typing import Iterable, List, Optional, Type
 
 from dataclasses_json import dataclass_json
 
-from ..page import (
-    LimitOffsetCursor,
-    LimitOffsetPage,
-    LimitOffsetPageQuery,
-    SortDirection,
-)
+from ..page import LimitOffsetCursor, LimitOffsetPage, LimitOffsetPageQuery, SortOrder
 
 __all__ = [
-    "AuthorCursor",
+    "AuthorCursorDto",
     "AuthorDto",
-    "AuthorPage",
-    "AuthorQuery",
-    "AuthorSort",
-    "AuthorPageSortBy",
+    "AuthorPageDto",
+    "AuthorQueryDto",
+    "AuthorSortDto",
+    "AuthorSortByDto",
     "CreateAuthorDto",
 ]
 
@@ -36,49 +31,49 @@ class CreateAuthorDto:
     id: Optional[int] = None
 
 
-class AuthorPageSortBy(Enum):
+class AuthorSortByDto(Enum):
     CREATED_AT = "created_at"
     FIRST_NAME = "first_name"
 
 
 @dataclass_json
 @dataclass(frozen=True)
-class AuthorSort:
-    by: AuthorPageSortBy = field(default=AuthorPageSortBy.CREATED_AT)
-    direction: SortDirection = field(default=SortDirection.DESC)
+class AuthorSortDto:
+    by: AuthorSortByDto = field(default=AuthorSortByDto.CREATED_AT)
+    order: SortOrder = field(default=SortOrder.DESC)
 
 
 @dataclass_json
 @dataclass(frozen=True)
-class AuthorCursor(
+class AuthorCursorDto(
     LimitOffsetCursor,
     limit_ceiling=5,
     limit_default=10,
 ):
-    sorts: List[AuthorSort] = field(default_factory=list)
+    sorts: List[AuthorSortDto] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
-class AuthorQuery(LimitOffsetPageQuery[AuthorCursor], cursor_cls=AuthorCursor):
-    sorts: List[AuthorSort] = field(default_factory=list)
+class AuthorQueryDto(LimitOffsetPageQuery[AuthorCursorDto], cursor_cls=AuthorCursorDto):
+    sorts: List[AuthorSortDto] = field(default_factory=list)
 
-    def make_cursor(self) -> AuthorCursor:
-        return AuthorCursor(sorts=self.sorts)
+    def make_cursor(self) -> AuthorCursorDto:
+        return AuthorCursorDto(sorts=self.sorts)
 
 
 @dataclass(frozen=True)
-class AuthorPage(LimitOffsetPage[AuthorQuery, AuthorDto]):
+class AuthorPageDto(LimitOffsetPage[AuthorQueryDto, AuthorDto]):
     total_count: int
 
     @classmethod
     def build(
-        cls: Type["AuthorPage"],
-        query: AuthorQuery,
+        cls: Type["AuthorPageDto"],
+        query: AuthorQueryDto,
         results: Iterable[AuthorDto],
         total_count: int,
-    ) -> "AuthorPage":
+    ) -> "AuthorPageDto":
         nodes, page_info = cls.derive_nodes_and_page_info(query, results)
-        return AuthorPage(
+        return AuthorPageDto(
             page_info=page_info,
             nodes=nodes,
             total_count=total_count,
