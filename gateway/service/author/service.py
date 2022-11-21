@@ -36,8 +36,6 @@ AUTHOR_PAGE_SORT_BY_TO_COLUMN_MAP = {
 # the result set, we add a final sort that's ... deterministic.
 AUTHOR_TAIL_SORT = asc(models.Author.id)
 
-AUTHOR_LIMIT_CEILING = 100
-
 
 def sorts_to_sqla(sorts: Iterable[AuthorSortDto]):
     _sorts = []
@@ -46,10 +44,6 @@ def sorts_to_sqla(sorts: Iterable[AuthorSortDto]):
         func = SORT_ORDER_TO_SQLA[sort.order]
         _sorts.append(func(col))
     return [*_sorts, AUTHOR_TAIL_SORT]
-
-
-def page_limit_below_ceiling(limit: int) -> int:
-    return min(limit, AUTHOR_LIMIT_CEILING)
 
 
 @dataclass
