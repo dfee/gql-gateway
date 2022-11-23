@@ -1,5 +1,5 @@
 from collections import namedtuple
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Iterable, List, Optional
 
@@ -42,7 +42,6 @@ class FooSort:
 class FooLimitOffsetCursor(LimitOffsetCursor):
     # for some reason, dataclasses_json can't decode Iterable[T], just List[T]
     sorts: List[FooSort] = field(default_factory=list)
-    has_even_id: Optional[bool] = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -51,15 +50,12 @@ class FooLimitOffsetPageQuery(
     cursor_cls=FooLimitOffsetCursor,
 ):
     sorts: Iterable[FooSort] = field(default_factory=list)
-    has_even_id: Optional[bool] = field(default=None)
 
     def make_cursor(self) -> FooLimitOffsetCursor:
-        return self.cursor_cls(
-            sorts=self.sorts,
-            has_even_id=self.has_even_id,
-        )
+        return self.cursor_cls(sorts=self.sorts)
 
 
+@dataclass(frozen=True)
 class FooLimitOffsetPage(LimitOffsetPage[FooLimitOffsetPageQuery, Foo]):
     pass
 
@@ -68,13 +64,14 @@ LimitOffsetExpectations = namedtuple("LimitOffsetExpectations", ["limit", "offse
 
 
 @pytest.mark.parametrize(
-    ("node_count", "limit_offset", "expectations", "metadata"),
+    ("limit_offset", "expectations", "results", "metadata"),
     [
         ## Beginning
-        [  # Want: [0, 1] -> Req: [0, 1, 2] -> Res: [] -> Get: []
-            0,
-            LimitOffset(after=0, first=2),
-            LimitOffsetExpectations(offset=0, limit=3),
+        ##   SELECT * FROM foo OFFSET 0 LIMIT 1; -- returns 1st record
+        [
+            LimitOffset(after=0, first=0),  # Want: []
+            LimitOffsetExpectations(offset=0, limit=1),  # Req: [1]
+            [],  # Res (none)
             LimitOffsetPageMetadata(
                 nodes=[],
                 page_info_metadata=LimitOffsetPageInfoMetadata(
@@ -85,53 +82,24 @@ LimitOffsetExpectations = namedtuple("LimitOffsetExpectations", ["limit", "offse
                 ),
             ),
         ],
-        [  # Want: [0, 1] -> Req: [0, 1, 2] -> Res: [0] -> Get: [0]
-            1,
-            LimitOffset(after=0, first=2),
-            LimitOffsetExpectations(offset=0, limit=3),
+        [
+            LimitOffset(after=0, first=0),  # Want: []
+            LimitOffsetExpectations(offset=0, limit=1),  # Req: [1]
+            [1],  # Res
             LimitOffsetPageMetadata(
-                nodes=[0],
-                page_info_metadata=LimitOffsetPageInfoMetadata(
-                    has_previous_page=False,
-                    has_next_page=False,
-                    start_offset=1,
-                    end_offset=1,
-                ),
-            ),
-        ],
-        [  # Want: [0, 1] -> Req: [0, 1, 2] -> Res: [0, 1] -> Get: [0, 1]
-            2,
-            LimitOffset(after=0, first=2),
-            LimitOffsetExpectations(offset=0, limit=3),
-            LimitOffsetPageMetadata(
-                nodes=[0, 1],
-                page_info_metadata=LimitOffsetPageInfoMetadata(
-                    has_previous_page=False,
-                    has_next_page=False,
-                    start_offset=1,
-                    end_offset=2,
-                ),
-            ),
-        ],
-        [  # Want: [0, 1] -> Req: [0, 1, 2] -> Res: [0, 1, 2] -> Get: [0, 1]
-            3,
-            LimitOffset(after=0, first=2),
-            LimitOffsetExpectations(offset=0, limit=3),
-            LimitOffsetPageMetadata(
-                nodes=[0, 1],
+                nodes=[],
                 page_info_metadata=LimitOffsetPageInfoMetadata(
                     has_previous_page=False,
                     has_next_page=True,
-                    start_offset=1,
-                    end_offset=2,
+                    start_offset=0,
+                    end_offset=0,
                 ),
             ),
         ],
-        ## Middle
-        [  # Want: [1, 2] -> Req: [0, 1, 2, 3] -> Res: [] -> Get: []
-            0,
-            LimitOffset(after=1, first=2),
-            LimitOffsetExpectations(offset=0, limit=4),
+        [
+            LimitOffset(after=0, first=2),  # Want: [1..2]
+            LimitOffsetExpectations(offset=0, limit=3),  # Req: [1..3]
+            [],  # Res (none)
             LimitOffsetPageMetadata(
                 nodes=[],
                 page_info_metadata=LimitOffsetPageInfoMetadata(
@@ -142,99 +110,183 @@ LimitOffsetExpectations = namedtuple("LimitOffsetExpectations", ["limit", "offse
                 ),
             ),
         ],
-        [  # Want: [1, 2] -> Req: [0, 1, 2, 3] -> Res: [0] -> Get: []
-            1,
-            LimitOffset(after=1, first=2),
-            LimitOffsetExpectations(offset=0, limit=4),
-            LimitOffsetPageMetadata(
-                nodes=[],
-                page_info_metadata=LimitOffsetPageInfoMetadata(
-                    has_previous_page=True,
-                    has_next_page=False,
-                    start_offset=1,
-                    end_offset=1,
-                ),
-            ),
-        ],
-        [  # Want: [1, 2] -> Req: [0, 1, 2, 3] -> Res: [0, 1] -> Get: [1]
-            2,
-            LimitOffset(after=1, first=2),
-            LimitOffsetExpectations(offset=0, limit=4),
+        [
+            LimitOffset(after=0, first=2),  # Want: [1..2]
+            LimitOffsetExpectations(offset=0, limit=3),  # Req: [1..3]
+            [1],  # Res
             LimitOffsetPageMetadata(
                 nodes=[1],
                 page_info_metadata=LimitOffsetPageInfoMetadata(
-                    has_previous_page=True,
+                    has_previous_page=False,
                     has_next_page=False,
-                    start_offset=2,
+                    start_offset=1,
+                    end_offset=1,
+                ),
+            ),
+        ],
+        [
+            LimitOffset(after=0, first=2),  # Want: [1..2]
+            LimitOffsetExpectations(offset=0, limit=3),  # Req: [1..3]
+            [1, 2],  # Res
+            LimitOffsetPageMetadata(
+                nodes=[1, 2],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=False,
+                    has_next_page=False,
+                    start_offset=1,
                     end_offset=2,
                 ),
             ),
         ],
-        [  # Want: [1, 2] -> Req: [0, 1, 2, 3] -> Res: [0, 1, 2] -> Get: [1, 2]
-            3,
-            LimitOffset(after=1, first=2),
-            LimitOffsetExpectations(offset=0, limit=4),
+        [
+            LimitOffset(after=0, first=2),  # Want: [1..2]
+            LimitOffsetExpectations(offset=0, limit=3),  # Req: [1..3]
+            [1, 2, 3],  # Res
             LimitOffsetPageMetadata(
                 nodes=[1, 2],
                 page_info_metadata=LimitOffsetPageInfoMetadata(
-                    has_previous_page=True,
-                    has_next_page=False,
-                    start_offset=2,
-                    end_offset=3,
+                    has_previous_page=False,
+                    has_next_page=True,
+                    start_offset=1,
+                    end_offset=2,
                 ),
             ),
         ],
-        [  # Want: [1, 2] -> Req: [0, 1, 2, 3] -> Res: [0, 1, 2, 3] -> Get: [1, 2]
-            4,
-            LimitOffset(after=1, first=2),
-            LimitOffsetExpectations(offset=0, limit=4),
+        ## Middle:
+        ##   SELECT * FROM foo OFFSET 9 LIMIT 1; -- returns 10th record
+        [
+            LimitOffset(after=10, first=0),  # Want: []
+            LimitOffsetExpectations(offset=9, limit=2),  # Req: [10..11]
+            [],  # Res (none)
             LimitOffsetPageMetadata(
-                nodes=[1, 2],
+                nodes=[],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=True,
+                    has_next_page=False,
+                    start_offset=10,
+                    end_offset=10,
+                ),
+            ),
+        ],
+        [
+            LimitOffset(after=10, first=0),  # Want: []
+            LimitOffsetExpectations(offset=9, limit=2),  # Req: [10..11]
+            [10],  # Res (none)
+            LimitOffsetPageMetadata(
+                nodes=[],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=True,
+                    has_next_page=False,
+                    start_offset=10,
+                    end_offset=10,
+                ),
+            ),
+        ],
+        [
+            LimitOffset(after=10, first=2),  # Want: [11..12]
+            LimitOffsetExpectations(offset=9, limit=4),  # Req: [10..13]
+            [],  # Res (none)
+            LimitOffsetPageMetadata(
+                nodes=[],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=True,
+                    has_next_page=False,
+                    start_offset=10,
+                    end_offset=10,
+                ),
+            ),
+        ],
+        [
+            LimitOffset(after=10, first=2),  # Want: [11..12]
+            LimitOffsetExpectations(offset=9, limit=4),  # Req: [10..13]
+            [10],  # Res
+            LimitOffsetPageMetadata(
+                nodes=[],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=True,
+                    has_next_page=False,
+                    start_offset=11,
+                    end_offset=11,
+                ),
+            ),
+        ],
+        [
+            LimitOffset(after=10, first=2),  # Want: [11..12]
+            LimitOffsetExpectations(offset=9, limit=4),  # Req: [10..13]
+            [10, 11],  # Res
+            LimitOffsetPageMetadata(
+                nodes=[11],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=True,
+                    has_next_page=False,
+                    start_offset=11,
+                    end_offset=11,
+                ),
+            ),
+        ],
+        [
+            LimitOffset(after=10, first=2),  # Want: [11..12]
+            LimitOffsetExpectations(offset=9, limit=4),  # Req: [10..13]
+            [10, 11, 12],  # Res
+            LimitOffsetPageMetadata(
+                nodes=[11, 12],
+                page_info_metadata=LimitOffsetPageInfoMetadata(
+                    has_previous_page=True,
+                    has_next_page=False,
+                    start_offset=11,
+                    end_offset=12,
+                ),
+            ),
+        ],
+        [
+            LimitOffset(after=10, first=2),  # Want: [11..12]
+            LimitOffsetExpectations(offset=9, limit=4),  # Req: [10..13]
+            [10, 11, 12, 13],  # Res
+            LimitOffsetPageMetadata(
+                nodes=[11, 12],
                 page_info_metadata=LimitOffsetPageInfoMetadata(
                     has_previous_page=True,
                     has_next_page=True,
-                    start_offset=2,
-                    end_offset=3,
+                    start_offset=11,
+                    end_offset=12,
                 ),
             ),
         ],
     ],
 )
 def test_limit_offset(
-    node_count: int,
+    results: Iterable[int],
     limit_offset: LimitOffset,
     expectations: LimitOffsetExpectations,
     metadata: LimitOffsetPageInfoMetadata,
 ) -> None:
     assert limit_offset.limit == expectations.limit
     assert limit_offset.offset == expectations.offset
-    nodes = list(range(node_count))
-
-    assert limit_offset.to_page_metadata(nodes) == metadata
+    assert limit_offset.to_page_metadata(results) == metadata
 
 
 @pytest.mark.parametrize(
     ("reverse", "forward"),
     [
         [
-            LimitOffset.reverse(before=0, last=2),
+            LimitOffset.reverse(before=0, last=2),  # Want: []
             LimitOffset(after=0, first=0),
         ],
         [
-            LimitOffset.reverse(before=1, last=2),
+            LimitOffset.reverse(before=1, last=2),  # Want []
+            LimitOffset(after=0, first=0),
+        ],
+        [
+            LimitOffset.reverse(before=2, last=2),  # Want: [1]
             LimitOffset(after=0, first=1),
         ],
         [
-            LimitOffset.reverse(before=2, last=2),
+            LimitOffset.reverse(before=3, last=2),  # Want: [1..2]
             LimitOffset(after=0, first=2),
         ],
         [
-            LimitOffset.reverse(before=3, last=2),
+            LimitOffset.reverse(before=4, last=2),  # Want: [2..3]
             LimitOffset(after=1, first=2),
-        ],
-        [
-            LimitOffset.reverse(before=4, last=2),
-            LimitOffset(after=2, first=2),
         ],
     ],
 )
@@ -276,13 +328,13 @@ def test_limit_offset_reverse(
             15,
             None,
             CursorDirection.BEFORE,
-            LimitOffset(after=5, first=FooLimitOffsetCursor.limit_default),
+            LimitOffset(after=4, first=FooLimitOffsetCursor.limit_default),
         ],
         [
             15,
             3,
             CursorDirection.BEFORE,
-            LimitOffset(after=12, first=3),
+            LimitOffset(after=11, first=3),
         ],
     ],
 )
@@ -300,12 +352,10 @@ def test_limit_offset_cursor__replace_offset():
     cursor = FooLimitOffsetCursor(
         offset=0,
         sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
-        has_even_id=True,
     )
     assert cursor.replace_offset(5) == FooLimitOffsetCursor(
         offset=5,
         sorts=cursor.sorts,
-        has_even_id=cursor.has_even_id,
     )
 
 
@@ -313,7 +363,6 @@ def test_limit_offset_cursor__codec():
     cursor = FooLimitOffsetCursor(
         offset=0,
         sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
-        has_even_id=True,
     )
     assert FooLimitOffsetCursor.decode(cursor.encode()) == cursor
 
@@ -370,7 +419,7 @@ def test_page_query_canonical_cursor(
                 before=FooLimitOffsetCursor(offset=10).encode(),
                 last=3,
             ),
-            LimitOffset(after=7, first=3),
+            LimitOffset(after=6, first=3),
         ],
         [
             FooLimitOffsetPageQuery(
@@ -401,7 +450,6 @@ def test_limit_offset_page_metadata__page_info_from_template_cursor():
     template_cursor = FooLimitOffsetCursor(
         offset=4,
         sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
-        has_even_id=True,
     )
 
     assert metadata.page_info_from_template_cursor(template_cursor) == PageInfo(
@@ -410,33 +458,74 @@ def test_limit_offset_page_metadata__page_info_from_template_cursor():
         start_cursor=FooLimitOffsetCursor(
             offset=metadata.page_info_metadata.start_offset,
             sorts=template_cursor.sorts,
-            has_even_id=template_cursor.has_even_id,
         ).encode(),
         end_cursor=FooLimitOffsetCursor(
             offset=metadata.page_info_metadata.end_offset,
             sorts=template_cursor.sorts,
-            has_even_id=template_cursor.has_even_id,
         ).encode(),
     )
 
 
-def test_limit_offset_page__derive_nodes_and_page_info():
-    query = FooLimitOffsetPageQuery(
-        first=5,
-        has_even_id=True,
-        sorts=[FooSort(by=FooSortBy.ID, order=SortOrder.ASC)],
-    )
-    results = [Foo(id) for id in range(6)]
+_SORTS = [FooSort(by=FooSortBy.ID, order=SortOrder.ASC)]
 
+
+@pytest.mark.parametrize(
+    ("query", "results", "expected_nodes", "expected_page_info"),
+    [
+        [
+            FooLimitOffsetPageQuery(  # Want: [Foo(1)..Foo(2)]
+                first=2,
+                sorts=_SORTS,
+            ),
+            [Foo(id) for id in range(1, 4)],  # Have: [Foo(1)..Foo(3)]
+            [Foo(id) for id in range(1, 3)],  # Get: [Foo(1)..Foo(2)]
+            PageInfo(
+                has_previous_page=False,
+                has_next_page=True,
+                start_cursor=FooLimitOffsetCursor(
+                    offset=1,
+                    sorts=_SORTS,
+                ).encode(),
+                end_cursor=FooLimitOffsetCursor(
+                    offset=2,
+                    sorts=_SORTS,
+                ).encode(),
+            ),
+        ],
+        [
+            FooLimitOffsetPageQuery(  # Want: [Foo(3)..Foo(4)]
+                after=FooLimitOffsetCursor(
+                    offset=2,
+                    sorts=_SORTS,
+                ).encode(),
+                first=2,
+            ),
+            [Foo(id) for id in range(2, 5)],  # Have: [Foo(2)..Foo(4)]
+            [Foo(id) for id in range(3, 5)],  # Get: [Foo(3)..Foo(4)]
+            PageInfo(
+                has_previous_page=True,
+                has_next_page=False,
+                start_cursor=FooLimitOffsetCursor(
+                    offset=3,
+                    sorts=_SORTS,
+                ).encode(),
+                end_cursor=FooLimitOffsetCursor(
+                    offset=4,
+                    sorts=_SORTS,
+                ).encode(),
+            ),
+        ],
+    ],
+)
+def test_limit_offset_page__derive_nodes_and_page_info(
+    query: FooLimitOffsetPageQuery,
+    results: Iterable[Foo],
+    expected_nodes: Iterable[Foo],
+    expected_page_info: PageInfo,
+) -> None:
     nodes, page_info = FooLimitOffsetPage.derive_nodes_and_page_info(
         query,
         results,
     )
-
-    assert nodes == results[0:5]
-    assert page_info == PageInfo(
-        has_previous_page=False,
-        has_next_page=True,
-        start_cursor=query.preferred_cursor.replace_offset(1).encode(),
-        end_cursor=query.preferred_cursor.replace_offset(5).encode(),
-    )
+    assert nodes == expected_nodes
+    assert page_info == expected_page_info

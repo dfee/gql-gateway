@@ -10,7 +10,6 @@ from gateway.client.author import (
 )
 from gateway.client.page import PageInfo
 from gateway.service.author import AuthorService
-from gateway.util.dataclass import b64_encode_dataclass
 
 CREATE_AUTHOR_DTO_1 = CreateAuthorDto(first_name="Neil", last_name="Stephenson")
 
@@ -65,43 +64,46 @@ def test_pages(author_service: AuthorService) -> None:
     creation_count = 5
     created = [
         author_service.create(create_author_dto_fixture(id))
-        for id in (range(creation_count))
+        for id in (range(1, creation_count + 1))
     ]
-    queries = [
-        AuthorQueryDto(first=3),
-        AuthorQueryDto(first=3, after=AuthorCursorDto(offset=1).encode()),
-        AuthorQueryDto(last=3, before=AuthorCursorDto(offset=5).encode()),
-    ]
-    results = author_service.pages(queries)
-    assert results == [
-        AuthorPageDto(
-            nodes=created[0:3],
-            page_info=PageInfo(
-                has_next_page=True,
-                has_previous_page=False,
-                start_cursor=queries[0].preferred_cursor.replace_offset(1).encode(),
-                end_cursor=queries[0].preferred_cursor.replace_offset(3).encode(),
-            ),
-            total_count=creation_count,
+
+    query0 = AuthorQueryDto(first=3)
+    expected0 = AuthorPageDto(
+        nodes=created[0:3],
+        page_info=PageInfo(
+            has_next_page=True,
+            has_previous_page=False,
+            start_cursor=query0.preferred_cursor.replace_offset(1).encode(),
+            end_cursor=query0.preferred_cursor.replace_offset(3).encode(),
         ),
-        AuthorPageDto(
-            nodes=created[1:4],
-            page_info=PageInfo(
-                has_next_page=True,
-                has_previous_page=True,
-                start_cursor=queries[1].preferred_cursor.replace_offset(2).encode(),
-                end_cursor=queries[1].preferred_cursor.replace_offset(4).encode(),
-            ),
-            total_count=creation_count,
+        total_count=creation_count,
+    )
+
+    query1 = AuthorQueryDto(first=3, after=AuthorCursorDto(offset=1).encode())
+    expected1 = AuthorPageDto(
+        nodes=created[1:4],
+        page_info=PageInfo(
+            has_next_page=True,
+            has_previous_page=True,
+            start_cursor=query1.preferred_cursor.replace_offset(2).encode(),
+            end_cursor=query1.preferred_cursor.replace_offset(4).encode(),
         ),
-        AuthorPageDto(
-            nodes=created[2:5],
-            page_info=PageInfo(
-                has_next_page=False,
-                has_previous_page=True,
-                start_cursor=queries[2].preferred_cursor.replace_offset(3).encode(),
-                end_cursor=queries[2].preferred_cursor.replace_offset(5).encode(),
-            ),
-            total_count=creation_count,
+        total_count=creation_count,
+    )
+
+    query2 = AuthorQueryDto(last=3, before=AuthorCursorDto(offset=5).encode())
+    expected2 = AuthorPageDto(
+        nodes=created[1:4],
+        page_info=PageInfo(
+            has_next_page=True,
+            has_previous_page=True,
+            start_cursor=query2.preferred_cursor.replace_offset(2).encode(),
+            end_cursor=query2.preferred_cursor.replace_offset(4).encode(),
         ),
-    ]
+        total_count=creation_count,
+    )
+
+    queries = [query0, query1, query2]
+    expected = [expected0, expected1, expected2]
+    actual = author_service.pages(queries)
+    assert actual == expected

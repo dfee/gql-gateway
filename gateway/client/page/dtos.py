@@ -119,7 +119,7 @@ class LimitOffset:
     def offset(self):
         if self.after:
             return self.after - 1
-        return 0
+        return self.after
 
     def to_page_metadata(
         self,
@@ -127,25 +127,26 @@ class LimitOffset:
     ) -> "LimitOffsetPageMetadata":
         results_count = len(results)
         if self.after > 0:
+            start_offset = (
+                self.after if not results or not self.first else self.after + 1
+            )
+            end_offset = min(
+                (
+                    self.after
+                    if results_count == 0
+                    else self.after + 1
+                    if results_count <= 2
+                    else self.after + results_count
+                ),
+                self.after + self.first,
+            )
             return LimitOffsetPageMetadata(
                 nodes=results[1 : self.limit - 1],
                 page_info_metadata=LimitOffsetPageInfoMetadata(
-                    has_previous_page=results_count > 0,
+                    has_previous_page=True,
                     has_next_page=results_count == self.limit,
-                    start_offset=(
-                        self.after + 1
-                        if results_count > 1
-                        else self.after
-                        if results_count
-                        else 0
-                    ),
-                    end_offset=(
-                        self.offset + self.limit - 1
-                        if results_count == self.limit
-                        else self.offset + results_count
-                        if results_count
-                        else 0
-                    ),
+                    start_offset=start_offset,
+                    end_offset=end_offset,
                 ),
             )
 
@@ -154,22 +155,16 @@ class LimitOffset:
             page_info_metadata=LimitOffsetPageInfoMetadata(
                 has_previous_page=False,
                 has_next_page=results_count == self.limit,
-                start_offset=(self.after + 1 if results_count else 0),
-                end_offset=(
-                    self.after + self.limit - 1
-                    if results_count == self.limit
-                    else self.after + results_count
-                    if results_count
-                    else 0
-                ),
+                start_offset=(0 if not results or not self.first else 1),
+                end_offset=max(0, min(results_count, self.first)),
             ),
         )
 
     @classmethod
     def reverse(cls: "LimitOffset", before: int, last: int) -> "LimitOffset":
-        if before - last >= 0:
-            return cls(after=before - last, first=last)
-        return cls(after=0, first=before)
+        if before - last > 0:
+            return cls(after=before - last - 1, first=last)
+        return cls(after=0, first=max(0, before - 1))
 
 
 @dataclass(frozen=True)
@@ -265,7 +260,7 @@ class LimitOffsetPage(Page[T], Generic[LOC_Q, T]):
         cls,
         query: LOC_Q,
         results: Iterable[T],
-    ) -> Tuple[Iterable[T], Page]:
+    ) -> Tuple[Iterable[T], PageInfo]:
         page_metadata = query.limit_offset.to_page_metadata(results)
         page_info = page_metadata.page_info_from_template_cursor(query.preferred_cursor)
         return page_metadata.nodes, page_info
