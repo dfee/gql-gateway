@@ -18,7 +18,6 @@ from gateway.client.page import (
     PageInfo,
     SortOrder,
 )
-from gateway.util.dataclass import b64_encode_dataclass
 
 
 @dataclass(frozen=True)
