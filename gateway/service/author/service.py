@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Optional, TypeVar
+from typing import Iterable, Mapping, Optional
 
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import asc, desc
@@ -16,9 +16,6 @@ from gateway.client.page import SortOrder
 from gateway.repository import models
 
 from .mappers import author_model_to_dto, create_author_dto_to_model
-
-T = TypeVar("T")
-
 
 # TODO: move this to a utils file. it's common.
 SORT_ORDER_TO_SQLA = {

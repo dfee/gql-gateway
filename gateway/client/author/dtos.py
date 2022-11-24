@@ -73,7 +73,7 @@ class AuthorPageDto(LimitOffsetPage[AuthorQueryDto, AuthorDto]):
         total_count: int,
     ) -> "AuthorPageDto":
         nodes, page_info = cls.derive_nodes_and_page_info(query, results)
-        return AuthorPageDto(
+        return cls(
             page_info=page_info,
             nodes=nodes,
             total_count=total_count,
